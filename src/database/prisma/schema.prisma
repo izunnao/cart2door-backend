@@ -26,4 +26,23 @@ model Order {
   status    String
   total     Float
   createdAt DateTime @default(now())
+
+  items     OrderItem[]  // 👈 Inverse relation
+}
+
+model OrderItem {
+  id              String   @id @default(uuid()) // 👈 UUID instead of autoincrement
+  productLink     String
+  productName     String
+  details         String
+  quantity        Int      @default(1)
+  price           Float    @default(0)
+  referenceNumber String
+  estimatedWeight String
+  image           String   @default("/placeholder.svg")
+  createdAt       DateTime @default(now())
+
+  // Optional relation to Order
+  orderId         String?
+  order           Order?   @relation(fields: [orderId], references: [id])
 }

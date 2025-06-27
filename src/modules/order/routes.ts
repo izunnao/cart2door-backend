@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { handleAddOrder } from "./controllers.js";
+import { addOrdersMiddleware } from "./middlewares.js";
 
-const router = Router()
+const orderRoute = Router()
 
-router.get('/add-order', handleAddOrder);
+orderRoute.post('/', addOrdersMiddleware, handleAddOrder);
 
-export default router
+export default orderRoute

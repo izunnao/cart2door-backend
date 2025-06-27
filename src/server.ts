@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { errorHandler } from './middlewares/errorHandler.js';
 import userRouter from './modules/user/routes.js';
+import orderRoute from './modules/order/routes.js';
 
 dotenv.config();
 
@@ -14,6 +15,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/users', userRouter);
+app.use('/api/orders', orderRoute);
 
 // Global error handler
 app.use(errorHandler);
