@@ -1,33 +1,58 @@
+enum PaymentMethod {
+  paystack
+}
+
+enum OrderStatus {
+  pending
+  ordered
+  shipped
+  delivered
+}
+
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
-
-
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
-  orders Order[]
+  id              String           @id @default(uuid())
+  email           String           @unique
+  password        String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @default(now())
+  orders          Order[]
+  shippingDetails ShippingDetail[]
+
+  phone   String @default("N/A")
+  address String @default("N/A")
+
+  firstName String @default("N/A")
+  lastName  String @default("N/A")
 }
 
 model Order {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  status    String
-  total     Float
-  createdAt DateTime @default(now())
+  id            String        @id @default(uuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id])
+  status        OrderStatus   @default(pending)
+  total         Float
+  createdAt     DateTime      @default(now())
+  fullName      String        @default("n/a")
+  phoneNumber   String        @default("n/a")
+  email         String        @default("n/a")
+  street        String        @default("n/a")
+  city          String        @default("n/a")
+  state         String        @default("n/a")
+  postalCode    String        @default("n/a")
+  paymentMethod PaymentMethod @default(paystack)
+  updatedAt     DateTime      @updatedAt  @default(now())
 
-  items     OrderItem[]  // 👈 Inverse relation
+  items OrderItem[]
 }
 
 model OrderItem {
@@ -42,7 +67,27 @@ model OrderItem {
   image           String   @default("/placeholder.svg")
   createdAt       DateTime @default(now())
 
+  currency     String @default("GBP") // 👈 new field
+  priceInNaira Float  @default(0) // 👈 new field
+
   // Optional relation to Order
-  orderId         String?
-  order           Order?   @relation(fields: [orderId], references: [id])
+  orderId String?
+  order   Order?  @relation(fields: [orderId], references: [id])
+}
+
+model ShippingDetail {
+  id            String        @id @default(uuid())
+  userId        String
+  fullName      String
+  phoneNumber   String
+  email         String
+  street        String
+  city          String
+  state         String
+  postalCode    String
+  saveAsDefault Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
 }

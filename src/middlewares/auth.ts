@@ -1,15 +1,20 @@
 
-import jwt from 'jsonwebtoken';
 import { NextFunction, Request, Response } from 'express';
-import { JWT_SECRET_CONF } from '../config.js';
+import { throwErrorOn } from '../utils/AppError.js';
+import { verifyToken } from '../utils/auth.js';
 
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).send('Access denied');
+  const token = req.cookies.token;
+
+  if (!token) {
+    throwErrorOn(!token, 401, 'Access denied');
+    return 
+  }
 
   try {
-    const verified = jwt.verify(token, JWT_SECRET_CONF);
-    
+    const user = verifyToken(token);
+
+    req['user'] = user
 
     next();
   } catch (err) {

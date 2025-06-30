@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "User" ALTER COLUMN "address" SET DEFAULT 'N/A',
+ALTER COLUMN "phone" SET DEFAULT 'N/A';

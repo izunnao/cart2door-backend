@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "OrderItem" ADD COLUMN     "currency" TEXT NOT NULL DEFAULT 'GBP',
+ADD COLUMN     "priceInNaira" DOUBLE PRECISION NOT NULL DEFAULT 0;

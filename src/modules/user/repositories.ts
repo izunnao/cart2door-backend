@@ -7,7 +7,7 @@ export const getUserByEmail = async (email: string): Promise<User | undefined> =
     try {
         const user = await prisma.user.findUnique({ where: { email } })
 
-        if(user){
+        if (user) {
             return user
         }
 
@@ -17,14 +17,9 @@ export const getUserByEmail = async (email: string): Promise<User | undefined> =
     }
 }
 
-export const createUser = async (email: string, password: string): Promise<User>  => {
+export const createUser = async (data: Pick<User, 'email' | 'password' | 'phone' | 'address'>): Promise<User> => {
     try {
-        return prisma.user.create({
-            data: {
-                email,
-                password,
-            },
-        });
+        return prisma.user.create({ data });
     } catch (error) {
         throw error
     }
