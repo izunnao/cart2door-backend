@@ -70,6 +70,33 @@ export const handleGetOrders = async (req: Request, res: Response, next: NextFun
 };
 
 
+export const handleGetOrdersForAdmin = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { status } = req.query
+    const { limit, page } = getPagination(req?.query?.limit, req?.query?.page)
+
+    const mainStatus = status as unknown as 'pending' | 'ordered' | 'shipped' | 'delivered'
+
+    let where: Partial<Order> = {  }
+
+    if (status) {
+      where.status = mainStatus
+    }
+
+
+    const orders = await getOrders({ where, limit: limit, page: page });
+
+    res.status(200).json({
+      data: orders,
+      isSuccess: true,
+      message: 'Orders retrieved successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 
 
 export const handleAddShipping = async (req: Request, res: Response, next: NextFunction) => {

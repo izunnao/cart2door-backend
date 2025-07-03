@@ -9,6 +9,11 @@ enum OrderStatus {
   delivered
 }
 
+enum UserRole {
+  admin
+  customer
+}
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -27,6 +32,7 @@ model User {
   updatedAt       DateTime         @default(now())
   orders          Order[]
   shippingDetails ShippingDetail[]
+  role            UserRole          @default(customer)
 
   phone   String @default("N/A")
   address String @default("N/A")

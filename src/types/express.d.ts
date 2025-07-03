@@ -1,8 +1,7 @@
-declare namespace Express {
-  export interface Request {
-    user?: {
-      id: string;
-      email: string;
-    };
+import { User } from "@prisma/client";
+
+declare module 'express' {
+  interface Request {
+    user?: User;
   }
 }

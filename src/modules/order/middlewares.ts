@@ -47,8 +47,10 @@ export const addOrdersMiddleware = async (req: Request, res: Response, next: Nex
 
         next();
     } catch (err) {
+        console.log('Error add order middleware', err?.message);
         next(err);
     }
+    
 };
 
 
