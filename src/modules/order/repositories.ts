@@ -74,7 +74,7 @@ export const createOrder = async (
 export const createOrderWithItems = async (
   userId: string,
   items: Omit<OrderItem, 'id' | 'orderId' | 'createdAt'>[],
-  shippingDetails: Omit<ShippingDetail, 'userId' | 'saveAsDefault'>
+  shippingDetails: Omit<ShippingDetail, 'id' | 'userId' | 'saveAsDefault'>
 ): Promise<{ order: Order, items: OrderItem[] }> => {
   return await prisma.$transaction(async (tx) => {
     // Step 1: Create order
