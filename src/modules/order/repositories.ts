@@ -1,7 +1,8 @@
 // src/modules/order/repositories/order.repository.ts
-import { Order, OrderItem, ShippingDetail } from '@prisma/client';
+import { Order, OrderItem, Payment, PaymentStatus, ShippingDetail } from '@prisma/client';
 import { prisma } from '../../database/prisma_config.js';
 import AppError from '../../utils/AppError.js';
+import { initializeTransaction } from '../../utils/paystack.js';
 
 
 export const getOrderById = async (
@@ -71,24 +72,32 @@ export const createOrder = async (
 };
 
 
-export const createOrderWithItems = async (
+export const createOrderPaymentWithItems = async (
   userId: string,
   items: Omit<OrderItem, 'id' | 'orderId' | 'createdAt'>[],
-  shippingDetails: Omit<ShippingDetail, 'id' | 'userId' | 'saveAsDefault'>
-): Promise<{ order: Order, items: OrderItem[] }> => {
+  shippingDetails: Omit<ShippingDetail, 'id' | 'userId' | 'saveAsDefault'>,
+  userEmail: string,
+): Promise<{
+  "authorization_url": string,
+  "access_code": string,
+  "reference": string
+}> => {
   return await prisma.$transaction(async (tx) => {
+
+    const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
     // Step 1: Create order
     const order = await tx.order.create({
       data: {
         userId,
-        total: 0, // will be updated later
+        total,
         status: 'pending',
         ...shippingDetails
       },
     });
 
     // Step 2: Create items
-    const orderItems = await Promise.all(
+    await Promise.all(
       items.map((item) =>
         tx.orderItem.create({
           data: {
@@ -99,18 +108,23 @@ export const createOrderWithItems = async (
       )
     );
 
-    // Step 3: Update total
-    const total = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const paymentInfo = await initializeTransaction(userEmail, total, order.id, 'http://localhost:8080/VerifyPayment')
 
-    const updatedOrder = await tx.order.update({
-      where: { id: order.id },
-      data: { total },
+    console.log('paystack info >>  ', paymentInfo)
+
+    await tx.payment.create({
+      data: {
+        userId,
+        amount: total,
+        status: PaymentStatus.pending,
+        accessCode: paymentInfo.access_code,
+        orderId: order.id,
+        reference: paymentInfo.reference,
+        currency: 'NGN',
+      },
     });
 
-    return {
-      order: updatedOrder,
-      items: orderItems,
-    };
+    return paymentInfo
   });
 };
 
@@ -152,4 +166,25 @@ export const getShippingDetailsById = async (id: string): Promise<ShippingDetail
   return prisma.shippingDetail.findUnique({
     where: { id },
   });
+};
+
+
+export const updatePayment = async (reference: string, data: { status: PaymentStatus, gateway_response: string }) => {
+  try {
+    const updatedPayment = await prisma.payment.update({
+      where: { reference },
+      data: {
+        status: data.status,
+        metadata: { gateway_response: data.gateway_response }
+      }
+    });
+
+    return {
+      success: true,
+      data: updatedPayment,
+      message: 'Payment updated successfully'
+    };
+  } catch (error) {
+    console.error('Error updating payment:', error);
+  }
 };

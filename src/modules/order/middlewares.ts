@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
 import { throwErrorOn } from '../../utils/AppError.js';
 import { getShippingDetailsById } from './repositories.js';
+import { extractErrorMessage } from '../../utils/error.js';
 
 export const addOrdersMiddleware = async (req: Request, res: Response, next: NextFunction) => {
 
@@ -22,9 +23,19 @@ export const addOrdersMiddleware = async (req: Request, res: Response, next: Nex
             priceInNaira: Joi.number().default(0),
         });
 
+        const shippingDetailsSchema = Joi.object({
+            fullName: Joi.string().min(2).required(),
+            phoneNumber: Joi.string().length(11).required(),
+            email: Joi.string().email().required(),
+            street: Joi.string().min(3).required(),
+            city: Joi.string().min(2).required(),
+            state: Joi.string().min(2).required(),
+            postalCode: Joi.string().min(3).required(),
+        });
+
         const schema = Joi.object({
             paymentMethod: Joi.string().valid('paystack').required(),
-            shippingId: Joi.string().uuid().required(),
+            shippingDetails: shippingDetailsSchema.required(),
             items: Joi.array().items(itemSchema).min(1).required(),
         });
 
@@ -32,25 +43,14 @@ export const addOrdersMiddleware = async (req: Request, res: Response, next: Nex
 
         throwErrorOn(Boolean(error), 400, error?.details?.[0].message || 'Invalid order data');
 
-
-        const shippingDetails = await getShippingDetailsById(req.body.shippingId)
-
-        throwErrorOn(!shippingDetails, 404, 'Shipping details not found');
-
-        throwErrorOn(
-            shippingDetails!.userId !== req.user!.id,
-            403,
-            'Unauthorized: Shipping details do not belong to the authenticated user'
-        );
-
-        req.body = { items: value.items, shippingDetails }
+        req.body = value
 
         next();
     } catch (err) {
-        console.log('Error add order middleware', err?.message);
+        console.log('Error add order middleware', extractErrorMessage(err));
         next(err);
     }
-    
+
 };
 
 

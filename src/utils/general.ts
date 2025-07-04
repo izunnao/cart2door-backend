@@ -1,3 +1,4 @@
+import { throwErrorOn } from "./AppError.js";
 import redis from "./redis.js";
 import { retry } from "./retry.js";
 
@@ -13,24 +14,39 @@ export const getPagination = (limitRaw: any, pageRaw: any) => {
 
 
 
-export const getFXRate = async (): Promise<number | undefined> => {
+export const getPublicFXRate = async (): Promise<number | undefined> => {
   try {
-    const fxRate = redis.get('fxRate')
+    const publicFXRate = await redis.get('publicFXRate')
 
-    if (Number(fxRate)) {
-      return Number(fxRate)
+    console.log('redis - ', publicFXRate)
+
+    if (Number(publicFXRate)) {
+      return Number(publicFXRate)
     }
 
     const response = await retry(async () => await fetch('https://api.exchangerate-api.com/v4/latest/GBP'))
     const data = await response.json();
 
     if (data.rates && data.rates.NGN) {
-      return Math.round(data.rates.NGN)
+      const nairaRate = Math.round(data.rates.NGN);
+
+      redis.set('publicFXRate', nairaRate)
+      return nairaRate;
     } else {
-      return undefined
+      // TODO: Trigger alarm
+      throwErrorOn(true, 500, 'We are working on it...')
     }
   } catch (error) {
     console.log(' error geting fx rate ', error);
-    return undefined
+    // TODO: Trigger alarm
+    throwErrorOn(true, 500, 'We are working on it...')
   }
 };
+
+export const converGBPToNaira = (gbp: number, fxRate: number) => {
+  return gbp * fxRate
+}
+
+export const calcInternalFXRate = (fxRate: number) => {
+    return fxRate * 1.15;
+}

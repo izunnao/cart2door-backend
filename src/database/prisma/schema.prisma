@@ -1,9 +1,18 @@
+enum PaymentStatus {
+  pending
+  success
+  failed
+  abandoned
+}
+
 enum PaymentMethod {
   paystack
 }
 
 enum OrderStatus {
   pending
+  paid
+  confirmed
   ordered
   shipped
   delivered
@@ -31,8 +40,9 @@ model User {
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @default(now())
   orders          Order[]
+  payments        Payment[]
   shippingDetails ShippingDetail[]
-  role            UserRole          @default(customer)
+  role            UserRole         @default(customer)
 
   phone   String @default("N/A")
   address String @default("N/A")
@@ -56,9 +66,26 @@ model Order {
   state         String        @default("n/a")
   postalCode    String        @default("n/a")
   paymentMethod PaymentMethod @default(paystack)
-  updatedAt     DateTime      @updatedAt  @default(now())
+  updatedAt     DateTime      @default(now()) @updatedAt
 
-  items OrderItem[]
+  items    OrderItem[]
+  payments Payment[]   @relation("OrderPayments")
+}
+
+model Payment {
+  id            String @id @default(uuid())
+  orderId       String
+  order         Order @relation("OrderPayments", fields: [orderId], references: [id])
+  userId        String
+  user          User @relation(fields: [userId], references: [id])
+  amount        Float
+  currency      String @default("NGN")
+  status        PaymentStatus @default(pending)
+  accessCode    String
+  reference     String @unique
+  metadata      Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model OrderItem {
@@ -73,16 +100,16 @@ model OrderItem {
   image           String   @default("/placeholder.svg")
   createdAt       DateTime @default(now())
 
-  currency     String @default("GBP") // 👈 new field
-  priceInNaira Float  @default(0) // 👈 new field
+  currency        String @default("GBP") // 👈 new field
+  priceInNaira    Float  @default(0) // 👈 new field
 
   // Optional relation to Order
-  orderId String?
-  order   Order?  @relation(fields: [orderId], references: [id])
+  orderId         String
+  order           Order  @relation(fields: [orderId], references: [id])
 }
 
 model ShippingDetail {
-  id            String        @id @default(uuid())
+  id            String   @id @default(uuid())
   userId        String
   fullName      String
   phoneNumber   String
@@ -91,9 +118,9 @@ model ShippingDetail {
   city          String
   state         String
   postalCode    String
-  saveAsDefault Boolean       @default(false)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  saveAsDefault Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id])
 }

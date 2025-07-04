@@ -14,3 +14,7 @@ export const CONFIG_REDIS_PORT = 3000
 export const CONFIG_REDIS_PASSWORD = ''
 
 
+// PAYSTACK
+export const CONFIG_PAYSTACK_API_URL = 'https://api.paystack.co'
+export const CONFIG_PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY
+
