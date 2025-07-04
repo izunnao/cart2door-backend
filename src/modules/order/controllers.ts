@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from "express";
-import { createOrderPaymentWithItems, createShippingDetail, getOrders, getUserShippingDetails, updatePayment } from "./repositories.js";
+import { createOrderPaymentWithItems, createShippingDetail, getOrders, getUserShippingDetails, updatePayment, updatePaymentAndOrder } from "./repositories.js";
 import { throwErrorOn } from "../../utils/AppError.js";
 import { getPublicFXRate, getPagination, calcInternalFXRate } from "../../utils/general.js";
-import { Order } from "@prisma/client";
+import { Order, OrderStatus } from "@prisma/client";
 import { calculatePriceInNairaForItems } from "./services.js";
 import { CONFIG_MIN_ORDER_AMOUNT } from "../../config.js";
 import { extractOrderCreationShippingDetails } from "./helpers.js";
@@ -158,11 +158,31 @@ export const handleVerifyPayment = async (req: Request, res: Response, next: Nex
       throwErrorOn(true, 400, 'Payment verification failed')
     }
 
-    // update payment status
-    await updatePayment(reference, { status: getInternalPaymentStatus(verificationResponse.status), gateway_response: verificationResponse.gateway_response })
+    const internalPaymentStatus = getInternalPaymentStatus(verificationResponse.status)
 
-    // update order
-    
+    // update payment status
+    // await updatePayment(reference, { status: internalPaymentStatus, gateway_response: verificationResponse.gateway_response })
+
+    let orderStatus: OrderStatus = 'pending';
+
+    if (internalPaymentStatus === 'success') {
+      orderStatus = 'paid'
+    }
+
+    if (internalPaymentStatus === 'pending') {
+      orderStatus = 'pending'
+    }
+
+    if (internalPaymentStatus === 'failed') {
+      orderStatus = 'pending'
+    }
+
+    if (internalPaymentStatus === 'abandoned') {
+      orderStatus = 'pending'
+    }
+
+    updatePaymentAndOrder({ id: '', status: orderStatus }, {reference, status: internalPaymentStatus, gateway_response: verificationResponse.gateway_response})
+
 
     // 4. Return successful verification response
     res.status(200).json({

@@ -1,8 +1,9 @@
 // src/modules/order/repositories/order.repository.ts
-import { Order, OrderItem, Payment, PaymentStatus, ShippingDetail } from '@prisma/client';
+import { Order, OrderItem, OrderStatus, Payment, PaymentStatus, ShippingDetail } from '@prisma/client';
 import { prisma } from '../../database/prisma_config.js';
 import AppError from '../../utils/AppError.js';
 import { initializeTransaction } from '../../utils/paystack.js';
+import { extractErrorMessage } from '../../utils/error.js';
 
 
 export const getOrderById = async (
@@ -188,3 +189,27 @@ export const updatePayment = async (reference: string, data: { status: PaymentSt
     console.error('Error updating payment:', error);
   }
 };
+
+export const updatePaymentAndOrder = async (order: { id: string, status: OrderStatus }, payment: { reference: string, status: PaymentStatus, gateway_response: string }) => {
+  try {
+    return await prisma.$transaction(async (tx) => {
+
+      await tx.order.update({
+        where: { id: order.id },
+        data: { status: order.status }
+      })
+
+      await tx.payment.update({
+        where: { reference: payment.reference },
+        data: {
+          status: payment.status,
+          metadata: { gateway_response: payment.gateway_response }
+        }
+      });
+
+
+    })
+  } catch (error) {
+    console.log('Transaction error: ', extractErrorMessage(error));
+  }
+}
