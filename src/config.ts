@@ -6,7 +6,6 @@ export const CONFIG_JWT_SECRET = process.env.JWT_SECRET || ""
 
 // 
 export const CONFIG_FX_RATE_MARGIN = 1.15
-export const CONFIG_MIN_ORDER_AMOUNT = 250000
 
 // REDIS
 export const CONFIG_REDIS_HOST = ''

@@ -17,9 +17,8 @@ export const addOrdersMiddleware = async (req: Request, res: Response, next: Nex
             quantity: Joi.number().integer().min(1).default(1),
             price: Joi.number().min(0).required(),
             referenceNumber: Joi.string().allow(''),
-            estimatedWeight: Joi.string().allow(''),
-            image: Joi.string().optional().uri().default('/placeholder.svg'),
-            currency: Joi.string().default('USD'), // optional: if you’ve added this
+            estimatedWeight: Joi.number(),
+            currency: Joi.string().default('GBP'), // optional: if you’ve added this
             priceInNaira: Joi.number().default(0),
         });
 
@@ -29,8 +28,12 @@ export const addOrdersMiddleware = async (req: Request, res: Response, next: Nex
             email: Joi.string().email().required(),
             street: Joi.string().min(3).required(),
             city: Joi.string().min(2).required(),
-            state: Joi.string().min(2).required(),
-            postalCode: Joi.string().min(3).required(),
+            state: Joi.string().valid('abuja', 'portharcourt', 'lagos').required()
+                .messages({
+                    'any.only': 'State must be one of: abuja, portharcourt, or lagos',
+                    'string.empty': 'State is required',
+                    'any.required': 'State is required'
+                }),
         });
 
         const schema = Joi.object({

@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Payment" ADD COLUMN     "amountInGBP" DOUBLE PRECISION NOT NULL DEFAULT 0;

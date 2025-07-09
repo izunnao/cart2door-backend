@@ -4,6 +4,9 @@ import { prisma } from '../../database/prisma_config.js';
 import AppError from '../../utils/AppError.js';
 import { initializeTransaction } from '../../utils/paystack.js';
 import { extractErrorMessage } from '../../utils/error.js';
+import { calcOrderSummary, deliveryFeeRateGBP, getDeliveryFee } from '../../utils/pricing.js';
+import { calcInternalFXRate } from '../../utils/general.js';
+import { HANDLING_FEE_GBP } from '../../utils/constants.js';
 
 
 export const getOrderById = async (
@@ -74,10 +77,15 @@ export const createOrder = async (
 
 
 export const createOrderPaymentWithItems = async (
-  userId: string,
-  items: Omit<OrderItem, 'id' | 'orderId' | 'createdAt'>[],
-  shippingDetails: Omit<ShippingDetail, 'id' | 'userId' | 'saveAsDefault'>,
-  userEmail: string,
+  { userId, userEmail, items, shippingDetails, internalFXRate }
+    :
+    {
+      userId: string,
+      userEmail: string,
+      items: Omit<OrderItem, 'id' | 'orderId' | 'createdAt'>[],
+      shippingDetails: Omit<ShippingDetail, 'id' | 'userId' | 'saveAsDefault'>,
+      internalFXRate: number
+    },
 ): Promise<{
   "authorization_url": string,
   "access_code": string,
@@ -85,17 +93,25 @@ export const createOrderPaymentWithItems = async (
 }> => {
   return await prisma.$transaction(async (tx) => {
 
-    const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const GBPTotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0); // total in GBP
+
+    const { nairaTotal } = calcOrderSummary(GBPTotal, internalFXRate, shippingDetails.state);
+
 
     // Step 1: Create order
     const order = await tx.order.create({
       data: {
         userId,
-        total,
+        total: GBPTotal,
+        handlingFee: HANDLING_FEE_GBP,
+        deliveryFee: deliveryFeeRateGBP[shippingDetails.state],
         status: 'pending',
         ...shippingDetails
       },
     });
+
+    console.log('order info >>  ', order);
+
 
     // Step 2: Create items
     await Promise.all(
@@ -109,14 +125,19 @@ export const createOrderPaymentWithItems = async (
       )
     );
 
-    const paymentInfo = await initializeTransaction(userEmail, total, order.id, 'http://localhost:8080/VerifyPayment')
+
+    console.log('totalPayable  :: ', nairaTotal, '      total GBP :: ', GBPTotal, '      internal fx rate :: ', internalFXRate)
+
+
+    const paymentInfo = await initializeTransaction(userEmail, nairaTotal, 'http://localhost:8080/verify-payment', order.id) // order id is collected and used from metadata in transaction verification
 
     console.log('paystack info >>  ', paymentInfo)
 
     await tx.payment.create({
       data: {
         userId,
-        amount: total,
+        amount: nairaTotal,
+        amountInGBP: GBPTotal,
         status: PaymentStatus.pending,
         accessCode: paymentInfo.access_code,
         orderId: order.id,
@@ -213,3 +234,88 @@ export const updatePaymentAndOrder = async (order: { id: string, status: OrderSt
     console.log('Transaction error: ', extractErrorMessage(error));
   }
 }
+
+
+interface GetUserPaymentsParams {
+  userId: string;
+  options?: {
+    limit?: number;
+    skip?: number;
+    orderBy?: 'asc' | 'desc';
+    status?: PaymentStatus;
+  };
+}
+
+export const getUserPayments = async ({ userId, options }: GetUserPaymentsParams) => {
+  try {
+    const { limit = 10, skip = 0, orderBy = 'desc', status } = options || {};
+
+    const payments = await prisma.payment.findMany({
+      where: {
+        userId,
+        ...(status && { status }),
+      },
+      take: limit,
+      skip,
+      orderBy: {
+        createdAt: orderBy,
+      },
+    });
+
+    const totalPayments = await prisma.payment.count({
+      where: {
+        userId,
+        ...(status && { status }),
+      },
+    });
+
+    return {
+      payments,
+      pagination: {
+        total: totalPayments,
+        limit,
+        skip,
+        hasMore: skip + limit < totalPayments,
+      },
+    };
+  } catch (error) {
+    throw error
+  }
+};
+
+
+
+export const getPayments = async (options: GetUserPaymentsParams['options']) => {
+  try {
+    const { limit = 10, skip = 0, orderBy = 'desc', status } = options || {};
+
+    const payments = await prisma.payment.findMany({
+      where: {
+        ...(status && { status }),
+      },
+      take: limit,
+      skip,
+      orderBy: {
+        createdAt: orderBy,
+      },
+    });
+
+    const totalPayments = await prisma.payment.count({
+      where: {
+        ...(status && { status }),
+      },
+    });
+
+    return {
+      payments,
+      pagination: {
+        total: totalPayments,
+        limit,
+        skip,
+        hasMore: skip + limit < totalPayments,
+      },
+    };
+  } catch (error) {
+    throw error
+  }
+};

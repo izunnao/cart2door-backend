@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { handleAddOrder, handleAddShipping, handleGetOrders, handleGetOrdersForAdmin, handleGetShipping, handleVerifyPayment } from "./controllers.js";
+import { handleAddOrder, handleAddShipping, handleGetInternalFXRate, handleGetOrders, handleGetOrdersForAdmin, handleGetPaymentsForAdmin, handleGetShipping, handleGetUserPayments, handleVerifyPayment } from "./controllers.js";
 import { addOrdersMiddleware, addShippingMiddleware, getOrdersMiddleware } from "./middlewares.js";
 import { authenticate, authorize } from "../../middlewares/auth.js";
 
@@ -11,6 +11,9 @@ orderRoute.post('/', authenticate, addOrdersMiddleware, handleAddOrder)
 
 
 orderRoute.get('/verify-payment', handleVerifyPayment)
+orderRoute.get('/payments', authenticate, handleGetUserPayments)
+orderRoute.get('/payments/admin', authenticate, authorize, handleGetPaymentsForAdmin)
+orderRoute.get('/payments/fx-rate', /* rate limiter, */ handleGetInternalFXRate)
 
 
 

@@ -64,8 +64,10 @@ model Order {
   street        String        @default("n/a")
   city          String        @default("n/a")
   state         String        @default("n/a")
-  postalCode    String        @default("n/a")
   paymentMethod PaymentMethod @default(paystack)
+  handlingFee   Float         @default(0)
+  deliveryFee   Float         @default(0)
+  vat           Float         @default(0)
   updatedAt     DateTime      @default(now()) @updatedAt
 
   items    OrderItem[]
@@ -73,19 +75,20 @@ model Order {
 }
 
 model Payment {
-  id            String @id @default(uuid())
-  orderId       String
-  order         Order @relation("OrderPayments", fields: [orderId], references: [id])
-  userId        String
-  user          User @relation(fields: [userId], references: [id])
-  amount        Float
-  currency      String @default("NGN")
-  status        PaymentStatus @default(pending)
-  accessCode    String
-  reference     String @unique
-  metadata      Json?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id          String        @id @default(uuid())
+  orderId     String
+  order       Order         @relation("OrderPayments", fields: [orderId], references: [id])
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  amountInGBP Float         @default(0)
+  amount      Float
+  currency    String        @default("NGN")
+  status      PaymentStatus @default(pending)
+  accessCode  String
+  reference   String        @unique
+  metadata    Json?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 }
 
 model OrderItem {
@@ -96,16 +99,15 @@ model OrderItem {
   quantity        Int      @default(1)
   price           Float    @default(0)
   referenceNumber String
-  estimatedWeight String
-  image           String   @default("/placeholder.svg")
+  estimatedWeight Float    @default(0)
   createdAt       DateTime @default(now())
 
-  currency        String @default("GBP") // 👈 new field
-  priceInNaira    Float  @default(0) // 👈 new field
+  currency     String @default("GBP") // 👈 new field
+  priceInNaira Float  @default(0) // 👈 new field
 
   // Optional relation to Order
-  orderId         String
-  order           Order  @relation(fields: [orderId], references: [id])
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id])
 }
 
 model ShippingDetail {

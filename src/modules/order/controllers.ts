@@ -1,23 +1,20 @@
 import { NextFunction, Request, Response } from "express";
-import { createOrderPaymentWithItems, createShippingDetail, getOrders, getUserShippingDetails, updatePayment, updatePaymentAndOrder } from "./repositories.js";
+import { createOrderPaymentWithItems, createShippingDetail, getOrders, getPayments, getUserPayments, getUserShippingDetails, updatePayment, updatePaymentAndOrder } from "./repositories.js";
 import { throwErrorOn } from "../../utils/AppError.js";
 import { getPublicFXRate, getPagination, calcInternalFXRate } from "../../utils/general.js";
-import { Order, OrderStatus } from "@prisma/client";
+import { Order, OrderStatus, PaymentStatus } from "@prisma/client";
 import { calculatePriceInNairaForItems } from "./services.js";
-import { CONFIG_MIN_ORDER_AMOUNT } from "../../config.js";
 import { extractOrderCreationShippingDetails } from "./helpers.js";
 import { getInternalPaymentStatus, verifyTransaction } from "../../utils/paystack.js";
+import { getRemainingAmount, validateMinimumOrder } from "../../utils/pricing.js";
+import { MINIMUM_ORDER_GBP } from "../../utils/constants.js";
 
 export const handleAddOrder = async (req: Request, res: Response, next: NextFunction) => {
-
   const { shippingDetails, items } = req.body;
   let publicFXRate: unknown;
 
   try {
     publicFXRate = await getPublicFXRate() as number
-
-
-    console.log(publicFXRate);
 
     if (!publicFXRate) {
       return throwErrorOn(!publicFXRate, 400, `Couldn't get fxRate`);
@@ -27,15 +24,22 @@ export const handleAddOrder = async (req: Request, res: Response, next: NextFunc
 
     const itemsWithNairaPrice = calculatePriceInNairaForItems(items, internalFXRate);
 
-    const total = itemsWithNairaPrice.reduce((sum, item) => sum + item.priceInNaira * item.quantity, 0);
 
-    console.log('total price >>  ', total);
+    const subtotal = itemsWithNairaPrice.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-    if (total < CONFIG_MIN_ORDER_AMOUNT) {
-      throwErrorOn(total < CONFIG_MIN_ORDER_AMOUNT, 400, 'Order total must be atleast ₦250,000')
+    const isMinimumMet = validateMinimumOrder(subtotal)
+    const remainingAmount = getRemainingAmount(subtotal)
+
+    console.log('itemsWithNairaPrice  >> ', itemsWithNairaPrice);
+    console.log('subtotal  >> ', subtotal);
+
+
+
+    if (!isMinimumMet) {
+      throwErrorOn(isMinimumMet, 400, `Order subtotal must be atleast £${MINIMUM_ORDER_GBP} you need extra £${remainingAmount} to complete`)
     }
 
-    const paymentInfo = await createOrderPaymentWithItems(req.user!.id, itemsWithNairaPrice, extractOrderCreationShippingDetails(shippingDetails), req.user!.email)
+    const paymentInfo = await createOrderPaymentWithItems({ userId: req.user!.id, userEmail: req.user!.email, items: itemsWithNairaPrice, shippingDetails: extractOrderCreationShippingDetails(shippingDetails), internalFXRate })
 
     res.status(200).json({
       data: paymentInfo,
@@ -150,8 +154,14 @@ export const handleVerifyPayment = async (req: Request, res: Response, next: Nex
       return throwErrorOn(true, 400, 'Transaction reference is required')
     }
 
+    console.log(reference);
+
     // 2. Verify the transaction with Paystack
     const verificationResponse = await verifyTransaction(reference as string);
+
+
+    console.log('verificationResponse')
+    console.log(verificationResponse)
 
     // 3. Handle the verification response
     if (!verificationResponse.status) {
@@ -181,13 +191,93 @@ export const handleVerifyPayment = async (req: Request, res: Response, next: Nex
       orderStatus = 'pending'
     }
 
-    updatePaymentAndOrder({ id: '', status: orderStatus }, {reference, status: internalPaymentStatus, gateway_response: verificationResponse.gateway_response})
+
+    console.log('updating payment',)
+
+    await updatePaymentAndOrder({ id: verificationResponse.metadata.orderId, status: orderStatus }, { reference, status: internalPaymentStatus, gateway_response: verificationResponse.gateway_response })
+
 
 
     // 4. Return successful verification response
     res.status(200).json({
       isSuccess: true,
       message: 'Payment verified successfully',
+    });
+
+  } catch (err) {
+    next(err)
+  }
+};
+
+
+
+export const handleGetUserPayments = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const status = req.query?.status as PaymentStatus
+    const { limit, page } = getPagination(req?.query?.limit, req?.query?.page)
+
+    console.log(page);
+
+    const userPayments = await getUserPayments({
+      userId: req.user!.id, options: {
+        limit,
+        skip: page,
+        ...(status && { status }),
+      }
+    })
+
+    res.status(200).json({
+      data: userPayments.payments,
+      pagination: userPayments.pagination,
+      isSuccess: true,
+      message: 'Payment verified successfully',
+    });
+
+  } catch (err) {
+    next(err)
+  }
+};
+
+
+
+export const handleGetPaymentsForAdmin = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const status = req.query?.status as PaymentStatus
+    const { limit, page } = getPagination(req?.query?.limit, req?.query?.page)
+
+    const payments = await getPayments({
+      limit,
+      skip: page,
+      ...(status && { status }),
+    })
+
+    res.status(200).json({
+      data: payments.payments,
+      pagination: payments.pagination,
+      isSuccess: true,
+      message: 'Payment verified successfully',
+    });
+
+  } catch (err) {
+    next(err)
+  }
+};
+
+
+
+export const handleGetInternalFXRate = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const publicFXRate = await getPublicFXRate() as number
+
+    if (!publicFXRate) {
+      return throwErrorOn(!publicFXRate, 400, `Couldn't get fxRate`);
+    }
+
+    const internalFXRate = calcInternalFXRate(publicFXRate)
+
+    res.status(200).json({
+      data: internalFXRate,
+      message: 'Gotten Internal FX Rate',
     });
 
   } catch (err) {
