@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { createOrderPaymentWithItems, createShippingDetail, getOrders, getPayments, getUserPayments, getUserShippingDetails, updatePayment, updatePaymentAndOrder } from "./repositories.js";
+import { createOrderPaymentWithItems, createShippingDetail, getOrders, getPayments, getUserPayments, getUserShippingDetails, updatePaymentAndOrder } from "./repositories.js";
 import { throwErrorOn } from "../../utils/AppError.js";
 import { getPublicFXRate, getPagination, calcInternalFXRate } from "../../utils/general.js";
 import { Order, OrderStatus, PaymentStatus } from "@prisma/client";
@@ -24,22 +24,22 @@ export const handleAddOrder = async (req: Request, res: Response, next: NextFunc
 
     const itemsWithNairaPrice = calculatePriceInNairaForItems(items, internalFXRate);
 
-
     const subtotal = itemsWithNairaPrice.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
     const isMinimumMet = validateMinimumOrder(subtotal)
     const remainingAmount = getRemainingAmount(subtotal)
 
-    console.log('itemsWithNairaPrice  >> ', itemsWithNairaPrice);
-    console.log('subtotal  >> ', subtotal);
-
-
-
     if (!isMinimumMet) {
-      throwErrorOn(isMinimumMet, 400, `Order subtotal must be atleast £${MINIMUM_ORDER_GBP} you need extra £${remainingAmount} to complete`)
+      throwErrorOn(!isMinimumMet, 400, `Order subtotal must be atleast £${MINIMUM_ORDER_GBP} you need extra £${remainingAmount} to complete`)
     }
 
-    const paymentInfo = await createOrderPaymentWithItems({ userId: req.user!.id, userEmail: req.user!.email, items: itemsWithNairaPrice, shippingDetails: extractOrderCreationShippingDetails(shippingDetails), internalFXRate })
+    const paymentInfo = await createOrderPaymentWithItems({
+      userId: req.user!.id,
+      userEmail: req.user!.email,
+      items: itemsWithNairaPrice,
+      shippingDetails: extractOrderCreationShippingDetails(shippingDetails),
+      internalFXRate
+    })
 
     res.status(200).json({
       data: paymentInfo,
@@ -99,7 +99,8 @@ export const handleGetOrdersForAdmin = async (req: Request, res: Response, next:
     const orders = await getOrders({ where, limit: limit, page: page });
 
     res.status(200).json({
-      data: orders,
+      data: orders.orders,
+      pagination: orders.pagination,
       isSuccess: true,
       message: 'Orders retrieved successfully',
     });
@@ -216,12 +217,10 @@ export const handleGetUserPayments = async (req: Request, res: Response, next: N
     const status = req.query?.status as PaymentStatus
     const { limit, page } = getPagination(req?.query?.limit, req?.query?.page)
 
-    console.log(page);
-
     const userPayments = await getUserPayments({
       userId: req.user!.id, options: {
         limit,
-        skip: page,
+        page,
         ...(status && { status }),
       }
     })

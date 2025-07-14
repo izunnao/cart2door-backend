@@ -7,6 +7,7 @@ import { extractErrorMessage } from '../../utils/error.js';
 import { calcOrderSummary, deliveryFeeRateGBP, getDeliveryFee } from '../../utils/pricing.js';
 import { calcInternalFXRate } from '../../utils/general.js';
 import { HANDLING_FEE_GBP } from '../../utils/constants.js';
+import { PaginationI } from '../../types/general.types.js';
 
 
 export const getOrderById = async (
@@ -34,22 +35,33 @@ interface GetOrdersOptions {
   page?: number;    // 0-indexed
 }
 
-export const getOrders = async ({ where = {}, limit = 10, page = 1 }: GetOrdersOptions): Promise<Order[]> => {
-
-  console.log(where, limit, page);
-
+export const getOrders = async ({ where = {}, limit = 10, page = 1 }: GetOrdersOptions): Promise<{ orders: Order[], pagination: PaginationI }> => {
   try {
+    const skip = (page) * limit
     const orders = await prisma.order.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       take: limit,
-      skip: (page) * limit,
+      skip,
       include: {
         items: true, // include order items if needed
       },
     });
 
-    return orders;
+    const totalPayments = await prisma.order.count({
+      where
+    });
+
+
+    return {
+      orders,
+      pagination: {
+        total: Math.floor(totalPayments / limit),
+        limit,
+        skip,
+        hasMore: skip + limit < totalPayments,
+      }
+    }
   } catch (error) {
     throw new AppError(500, 'Failed to retrieve order(s). Please try again.');
   }
@@ -102,6 +114,7 @@ export const createOrderPaymentWithItems = async (
     const order = await tx.order.create({
       data: {
         userId,
+        userEmail,
         total: GBPTotal,
         handlingFee: HANDLING_FEE_GBP,
         deliveryFee: deliveryFeeRateGBP[shippingDetails.state],
@@ -136,6 +149,7 @@ export const createOrderPaymentWithItems = async (
     await tx.payment.create({
       data: {
         userId,
+        userEmail,
         amount: nairaTotal,
         amountInGBP: GBPTotal,
         status: PaymentStatus.pending,
@@ -240,7 +254,7 @@ interface GetUserPaymentsParams {
   userId: string;
   options?: {
     limit?: number;
-    skip?: number;
+    page?: number;
     orderBy?: 'asc' | 'desc';
     status?: PaymentStatus;
   };
@@ -248,7 +262,7 @@ interface GetUserPaymentsParams {
 
 export const getUserPayments = async ({ userId, options }: GetUserPaymentsParams) => {
   try {
-    const { limit = 10, skip = 0, orderBy = 'desc', status } = options || {};
+    const { limit = 10, page = 0, orderBy = 'desc', status } = options || {};
 
     const payments = await prisma.payment.findMany({
       where: {
@@ -256,7 +270,7 @@ export const getUserPayments = async ({ userId, options }: GetUserPaymentsParams
         ...(status && { status }),
       },
       take: limit,
-      skip,
+      skip: page,
       orderBy: {
         createdAt: orderBy,
       },
@@ -272,7 +286,7 @@ export const getUserPayments = async ({ userId, options }: GetUserPaymentsParams
     return {
       payments,
       pagination: {
-        total: totalPayments,
+        total: Math.floor(totalPayments / limit),
         limit,
         skip,
         hasMore: skip + limit < totalPayments,
@@ -285,13 +299,16 @@ export const getUserPayments = async ({ userId, options }: GetUserPaymentsParams
 
 
 
-export const getPayments = async (options: GetUserPaymentsParams['options']) => {
+export const getPayments = async (options: GetUserPaymentsParams['options'], userId?: string) => {
   try {
     const { limit = 10, skip = 0, orderBy = 'desc', status } = options || {};
 
     const payments = await prisma.payment.findMany({
       where: {
         ...(status && { status }),
+      },
+      include: {
+        ...(userId && { user: true })
       },
       take: limit,
       skip,
@@ -309,7 +326,7 @@ export const getPayments = async (options: GetUserPaymentsParams['options']) => 
     return {
       payments,
       pagination: {
-        total: totalPayments,
+        total: Math.floor(totalPayments / limit), // because it's zero based
         limit,
         skip,
         hasMore: skip + limit < totalPayments,

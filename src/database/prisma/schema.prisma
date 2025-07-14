@@ -55,12 +55,13 @@ model Order {
   id            String        @id @default(uuid())
   userId        String
   user          User          @relation(fields: [userId], references: [id])
+  userEmail     String        @default("n/a")
   status        OrderStatus   @default(pending)
   total         Float
   createdAt     DateTime      @default(now())
   fullName      String        @default("n/a")
   phoneNumber   String        @default("n/a")
-  email         String        @default("n/a")
+  email         String        @default("n/a")  //recipient email
   street        String        @default("n/a")
   city          String        @default("n/a")
   state         String        @default("n/a")
@@ -79,6 +80,7 @@ model Payment {
   orderId     String
   order       Order         @relation("OrderPayments", fields: [orderId], references: [id])
   userId      String
+  userEmail   String        @default("n/a")
   user        User          @relation(fields: [userId], references: [id])
   amountInGBP Float         @default(0)
   amount      Float
