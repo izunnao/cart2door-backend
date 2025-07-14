@@ -133,6 +133,8 @@ export const handleGetShipping = async (req: Request, res: Response, next: NextF
   try {
     const userId = req.user!.id;
 
+    console.log(userId, 'getting shipping info')
+
     const shipping = await getUserShippingDetails(userId);
 
     res.status(200).json({
@@ -246,7 +248,7 @@ export const handleGetPaymentsForAdmin = async (req: Request, res: Response, nex
 
     const payments = await getPayments({
       limit,
-      skip: page,
+      page,
       ...(status && { status }),
     })
 

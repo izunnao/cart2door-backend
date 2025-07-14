@@ -87,7 +87,6 @@ export const addShippingMiddleware = (req: Request, res: Response, next: NextFun
             street: Joi.string().required(),
             city: Joi.string().required(),
             state: Joi.string().required(),
-            postalCode: Joi.string().required(),
             saveAsDefault: Joi.boolean().default(false),
         });
 

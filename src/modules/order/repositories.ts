@@ -260,7 +260,7 @@ interface GetUserPaymentsParams {
   };
 }
 
-export const getUserPayments = async ({ userId, options }: GetUserPaymentsParams) => {
+export const getUserPayments = async ({ userId, options }: GetUserPaymentsParams): Promise<{payments: Payment[], pagination: PaginationI}> => {
   try {
     const { limit = 10, page = 0, orderBy = 'desc', status } = options || {};
 
@@ -288,8 +288,8 @@ export const getUserPayments = async ({ userId, options }: GetUserPaymentsParams
       pagination: {
         total: Math.floor(totalPayments / limit),
         limit,
-        skip,
-        hasMore: skip + limit < totalPayments,
+        skip: page,
+        hasMore: page + limit < totalPayments,
       },
     };
   } catch (error) {
@@ -301,7 +301,7 @@ export const getUserPayments = async ({ userId, options }: GetUserPaymentsParams
 
 export const getPayments = async (options: GetUserPaymentsParams['options'], userId?: string) => {
   try {
-    const { limit = 10, skip = 0, orderBy = 'desc', status } = options || {};
+    const { limit = 10, page = 0, orderBy = 'desc', status } = options || {};
 
     const payments = await prisma.payment.findMany({
       where: {
@@ -311,7 +311,7 @@ export const getPayments = async (options: GetUserPaymentsParams['options'], use
         ...(userId && { user: true })
       },
       take: limit,
-      skip,
+      skip: page,
       orderBy: {
         createdAt: orderBy,
       },
@@ -328,8 +328,8 @@ export const getPayments = async (options: GetUserPaymentsParams['options'], use
       pagination: {
         total: Math.floor(totalPayments / limit), // because it's zero based
         limit,
-        skip,
-        hasMore: skip + limit < totalPayments,
+        skip: page,
+        hasMore: page + limit < totalPayments,
       },
     };
   } catch (error) {

@@ -17,3 +17,11 @@ export const CONFIG_REDIS_PASSWORD = ''
 export const CONFIG_PAYSTACK_API_URL = 'https://api.paystack.co'
 export const CONFIG_PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY
 
+
+
+// ZEPTOMAIL
+export const CONFIG_ZEPTO_SMTP_HOST = process.env.ZEPTO_SMTP_HOST
+export const CONFIG_ZEPTO_SMTP_PORT = process.env.ZEPTO_SMTP_PORT
+export const CONFIG_ZEPTO_SMTP_USERNAME = process.env.ZEPTO_SMTP_USERNAME
+export const CONFIG_ZEPTO_SMTP_PASSWORD = process.env.ZEPTO_SMTP_PASSWORD
+export const CONFIG_ZEPTO_FROM_ADDRESS = process.env.ZEPTO_FROM_ADDRESS

@@ -1,0 +1,8 @@
+/*
+  Warnings:
+
+  - You are about to drop the column `postalCode` on the `ShippingDetail` table. All the data in the column will be lost.
+
+*/
+-- AlterTable
+ALTER TABLE "ShippingDetail" DROP COLUMN "postalCode";
