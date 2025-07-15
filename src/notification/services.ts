@@ -1,30 +1,52 @@
 
+import { CONFIG_ZEPTO_FROM_ADDRESS } from '../config.js';
+import { retry } from '../utils/retry.js';
+import { TemplatePayloadType } from './types.js';
 import { zeptomailer } from './utils.js';
+import { templateContexts } from './utils/context.temp.notification.js';
 
 interface SendMailOptions {
   to: string | string[];
   subject: string;
-  template: string;              // file name without extension
-  context: Record<string, any>;  // data for template
+  context: keyof TemplatePayloadType;
+  payload: Record<string, string | number>
 }
 
 export const sendMail = async ({
   to,
   subject,
-  template,
   context,
+  payload
 }: SendMailOptions) => {
-  const html = `<h3>Hello {{customerName}},</h3>
-<p>Thank you for your order <strong>#{{orderId}}</strong>.</p>
-<p>Total: ₦{{total}}</p>
-`;
+  const template = templateContexts[context](payload)
 
-  const info = await zeptomailer.sendMail({
-    from: process.env.ZEPTO_FROM_ADDRESS,
-    to,
-    subject,
-    html,
-  });
+  if (!template) {
+    console.error('Template does not exist for ', context);
+    return;
+  }
 
-  return info; // contains Message-ID etc.
+  try {
+    const info = await zeptomailer.sendMail({
+      from: CONFIG_ZEPTO_FROM_ADDRESS,
+      to,
+      subject,
+      html: template,
+    });
+
+
+    console.log(info)
+
+    // return info; // contains Message-ID etc.
+
+  } catch (error) {
+
+    await retry(async () => await sendMail({
+      to,
+      subject,
+      context,
+      payload
+    }), 3, 1000)
+
+    console.error(error)
+  }
 };

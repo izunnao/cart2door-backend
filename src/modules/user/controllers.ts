@@ -2,11 +2,20 @@ import { NextFunction, Request, Response } from "express"
 import { createUser, getUserByEmail } from "./repositories.js"
 import { throwErrorOn } from "../../utils/AppError.js";
 import { generateToken } from "../../utils/auth.js";
+import { sendMail } from "../../notification/services.js";
+import { templatePayloads } from "../../notification/utils/payload.temp.notification.js";
 
 export const handleRegister = async (req: Request, res: Response, next: NextFunction) => {
     try {
         delete req.body.confirmPassword;
         const newUser = await createUser(req.body);
+
+        sendMail({
+            to: newUser.email,
+            payload: templatePayloads.registrationSuccess({ name: newUser.firstName, id: newUser.id, verificationLink: '' }),
+            context: 'registrationSuccess',
+            subject: 'Registration Success',
+        })
 
         res.status(200).json({
             data: newUser,
@@ -43,17 +52,17 @@ export const handleLogin = async (req: Request, res: Response, next: NextFunctio
         );
 
         res
-        .cookie('token', token, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none',
-            maxAge: 3600 * 1000
-        })
-        .status(200).json({
-            data: { user, token },
-            message: 'Login successful',
-            isSuccess: true,
-        });
+            .cookie('token', token, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'none',
+                maxAge: 3600 * 1000
+            })
+            .status(200).json({
+                data: { user, token },
+                message: 'Login successful',
+                isSuccess: true,
+            });
     } catch (error) {
         next(error);
     }

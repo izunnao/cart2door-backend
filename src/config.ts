@@ -25,3 +25,8 @@ export const CONFIG_ZEPTO_SMTP_PORT = process.env.ZEPTO_SMTP_PORT
 export const CONFIG_ZEPTO_SMTP_USERNAME = process.env.ZEPTO_SMTP_USERNAME
 export const CONFIG_ZEPTO_SMTP_PASSWORD = process.env.ZEPTO_SMTP_PASSWORD
 export const CONFIG_ZEPTO_FROM_ADDRESS = process.env.ZEPTO_FROM_ADDRESS
+
+
+
+// CLIENT
+export const CONFIG_CLIENT_BASE_URL = process.env.CLIENT_BASE_URL
