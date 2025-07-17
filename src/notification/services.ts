@@ -1,5 +1,3 @@
-
-import { CONFIG_ZEPTO_FROM_ADDRESS } from '../config.js';
 import { retry } from '../utils/retry.js';
 import { TemplatePayloadType } from './types.js';
 import { zeptomailer } from './utils.js';
@@ -26,18 +24,12 @@ export const sendMail = async ({
   }
 
   try {
-    const info = await zeptomailer.sendMail({
-      from: CONFIG_ZEPTO_FROM_ADDRESS,
+    await zeptomailer.sendMail({
+      from: 'Cart2Door',
       to,
       subject,
       html: template,
     });
-
-
-    console.log(info)
-
-    // return info; // contains Message-ID etc.
-
   } catch (error) {
 
     await retry(async () => await sendMail({

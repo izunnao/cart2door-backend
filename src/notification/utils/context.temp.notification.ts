@@ -1,9 +1,18 @@
+import { fxRateAlertEmail } from "../templates/fxRateAlertMail.temp.notification.js";
 import { registrationSuccessEmail } from "../templates/registrationSuccess.temp.notification.js";
 import { TemplatePayloadType } from "../types.js";
 
 export const templateContexts: Record<keyof TemplatePayloadType, (value: any) => string> = {
-  registrationSuccess: (user: TemplatePayloadType['registrationSuccess']) =>
-    registrationSuccessEmail(user.name, user.id, user.verificationLink),
+  registrationSuccess: (data: TemplatePayloadType['registrationSuccess']) =>
+    registrationSuccessEmail(data.name, data.id, data.verificationLink),
+
+  fxRateAlertEmailI: (data: TemplatePayloadType['fxRateAlertEmailI']) => 
+                fxRateAlertEmail({ 
+                      apiUrl: data.apiUrl, 
+                      errorMessage: data.errorMessage, 
+                      retryCount: data.retryCount, 
+                      timestamp: data.timestamp 
+                    }),
 
   // orderSuccess: (order: {
   //   id: string;
