@@ -16,6 +16,7 @@ enum OrderStatus {
   ordered
   shipped
   delivered
+  cancelled
 }
 
 enum UserRole {
