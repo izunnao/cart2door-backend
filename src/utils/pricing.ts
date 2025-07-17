@@ -34,9 +34,6 @@ export const getHandlingFee = (handlingFeeGBP: number, fxRate: number) => {
 
 // use on both the frontend and backend
 export const calcOrderSummary = (subtotalGBP: number, internalFxRate: number, state: string) => {
-
-
-
     // Calculate totals
     const subtotalNGN = Math.round(subtotalGBP * internalFxRate);
     const customsDuty = Math.round(subtotalNGN * 0.1); // 10% customs

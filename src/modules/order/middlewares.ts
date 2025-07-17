@@ -77,6 +77,25 @@ export const getOrdersMiddleware = (req: Request, res: Response, next: NextFunct
 
 
 
+export const getUserPaymentsMiddleware = (req: Request, res: Response, next: NextFunction): void => {
+    try {
+        const schema = Joi.object({
+            status: Joi.string().valid('pending', 'success', 'failed', 'abandoned').optional(),
+            limit: Joi.number().integer().min(1).max(100).default(10),
+            page: Joi.number().integer().min(1).default(1),
+        });
+
+        const { error } = schema.validate(req.query);
+        throwErrorOn(Boolean(error), 400, error?.details?.[0].message || 'Invalid query parameters');
+
+        next();
+    } catch (err) {
+        next(err);
+    }
+};
+
+
+
 
 export const addShippingMiddleware = (req: Request, res: Response, next: NextFunction) => {
     try {

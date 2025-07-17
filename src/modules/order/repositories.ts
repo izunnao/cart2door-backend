@@ -5,7 +5,7 @@ import AppError from '../../utils/AppError.js';
 import { initializeTransaction } from '../../utils/paystack.js';
 import { extractErrorMessage } from '../../utils/error.js';
 import { calcOrderSummary, deliveryFeeRateGBP, getDeliveryFee } from '../../utils/pricing.js';
-import { calcInternalFXRate } from '../../utils/general.js';
+import { calcInternalFXRate, calcResponsePagination } from '../../utils/general.js';
 import { HANDLING_FEE_GBP } from '../../utils/constants.js';
 import { PaginationI } from '../../types/general.types.js';
 
@@ -35,7 +35,7 @@ interface GetOrdersOptions {
   page?: number;    // 0-indexed
 }
 
-export const getOrders = async ({ where = {}, limit = 10, page = 1 }: GetOrdersOptions): Promise<{ orders: Order[], pagination: PaginationI }> => {
+export const getOrders = async ({ where = {}, limit = 10, page = 0 }: GetOrdersOptions): Promise<{ orders: Order[], pagination: PaginationI }> => {
   try {
     const skip = (page) * limit
     const orders = await prisma.order.findMany({
@@ -48,19 +48,14 @@ export const getOrders = async ({ where = {}, limit = 10, page = 1 }: GetOrdersO
       },
     });
 
-    const totalPayments = await prisma.order.count({
+    const totalOrders = await prisma.order.count({
       where
     });
 
 
     return {
       orders,
-      pagination: {
-        total: Math.floor(totalPayments / limit),
-        limit,
-        skip,
-        hasMore: skip + limit < totalPayments,
-      }
+      pagination: calcResponsePagination(totalOrders, limit, page)
     }
   } catch (error) {
     throw new AppError(500, 'Failed to retrieve order(s). Please try again.');
@@ -260,7 +255,7 @@ interface GetUserPaymentsParams {
   };
 }
 
-export const getUserPayments = async ({ userId, options }: GetUserPaymentsParams): Promise<{payments: Payment[], pagination: PaginationI}> => {
+export const getUserPayments = async ({ userId, options }: GetUserPaymentsParams): Promise<{ payments: Payment[], pagination: PaginationI }> => {
   try {
     const { limit = 10, page = 0, orderBy = 'desc', status } = options || {};
 
@@ -270,7 +265,7 @@ export const getUserPayments = async ({ userId, options }: GetUserPaymentsParams
         ...(status && { status }),
       },
       take: limit,
-      skip: page,
+      skip: (page) * limit,
       orderBy: {
         createdAt: orderBy,
       },
@@ -285,12 +280,7 @@ export const getUserPayments = async ({ userId, options }: GetUserPaymentsParams
 
     return {
       payments,
-      pagination: {
-        total: Math.floor(totalPayments / limit),
-        limit,
-        skip: page,
-        hasMore: page + limit < totalPayments,
-      },
+      pagination: calcResponsePagination(totalPayments, limit, page)
     };
   } catch (error) {
     throw error
@@ -299,7 +289,7 @@ export const getUserPayments = async ({ userId, options }: GetUserPaymentsParams
 
 
 
-export const getPayments = async (options: GetUserPaymentsParams['options'], userId?: string) => {
+export const getPayments = async (options: GetUserPaymentsParams['options'], userId?: string): Promise<{ payments: Payment[], pagination: PaginationI }> => {
   try {
     const { limit = 10, page = 0, orderBy = 'desc', status } = options || {};
 
@@ -311,7 +301,7 @@ export const getPayments = async (options: GetUserPaymentsParams['options'], use
         ...(userId && { user: true })
       },
       take: limit,
-      skip: page,
+      skip: (page) * limit,
       orderBy: {
         createdAt: orderBy,
       },
@@ -325,12 +315,7 @@ export const getPayments = async (options: GetUserPaymentsParams['options'], use
 
     return {
       payments,
-      pagination: {
-        total: Math.floor(totalPayments / limit), // because it's zero based
-        limit,
-        skip: page,
-        hasMore: page + limit < totalPayments,
-      },
+      pagination: calcResponsePagination(totalPayments, limit, page)
     };
   } catch (error) {
     throw error

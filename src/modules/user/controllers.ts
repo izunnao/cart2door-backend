@@ -10,6 +10,8 @@ export const handleRegister = async (req: Request, res: Response, next: NextFunc
         delete req.body.confirmPassword;
         const newUser = await createUser(req.body);
 
+        console.log(newUser);
+
         sendMail({
             to: newUser.email,
             payload: templatePayloads.registrationSuccess({ name: newUser.firstName, id: newUser.id, verificationLink: '' }),
@@ -51,8 +53,7 @@ export const handleLogin = async (req: Request, res: Response, next: NextFunctio
             '7d',
         );
 
-        res
-            .cookie('token', token, {
+        res.cookie('token', token, {
                 httpOnly: true,
                 secure: true,
                 sameSite: 'none',

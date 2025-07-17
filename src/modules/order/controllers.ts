@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { createOrderPaymentWithItems, createShippingDetail, getOrders, getPayments, getUserPayments, getUserShippingDetails, updatePaymentAndOrder } from "./repositories.js";
 import { throwErrorOn } from "../../utils/AppError.js";
-import { getPublicFXRate, getPagination, calcInternalFXRate } from "../../utils/general.js";
+import { getPublicFXRate, calcPayloadPagination, calcInternalFXRate } from "../../utils/general.js";
 import { Order, OrderStatus, PaymentStatus } from "@prisma/client";
 import { calculatePriceInNairaForItems } from "./services.js";
 import { extractOrderCreationShippingDetails } from "./helpers.js";
@@ -58,7 +58,10 @@ export const handleGetOrders = async (req: Request, res: Response, next: NextFun
     const userId = req.user!.id;
 
     const { status } = req.query
-    const { limit, page } = getPagination(req?.query?.limit, req?.query?.page)
+    const { limit, page } = calcPayloadPagination(req?.query?.limit as string, req?.query?.page as string)
+
+
+    console.log('limit, ', limit, 'page, ', page);
 
     const mainStatus = status as unknown as 'pending' | 'ordered' | 'shipped' | 'delivered'
 
@@ -72,7 +75,8 @@ export const handleGetOrders = async (req: Request, res: Response, next: NextFun
     const orders = await getOrders({ where, limit: limit, page: page });
 
     res.status(200).json({
-      data: orders,
+      data: orders.orders,
+      pagination: orders.pagination,
       isSuccess: true,
       message: 'Orders retrieved successfully',
     });
@@ -85,7 +89,7 @@ export const handleGetOrders = async (req: Request, res: Response, next: NextFun
 export const handleGetOrdersForAdmin = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { status } = req.query
-    const { limit, page } = getPagination(req?.query?.limit, req?.query?.page)
+    const { limit, page } = calcPayloadPagination(req?.query?.limit as string, req?.query?.page as string)
 
     const mainStatus = status as unknown as 'pending' | 'ordered' | 'shipped' | 'delivered'
 
@@ -217,7 +221,7 @@ export const handleVerifyPayment = async (req: Request, res: Response, next: Nex
 export const handleGetUserPayments = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const status = req.query?.status as PaymentStatus
-    const { limit, page } = getPagination(req?.query?.limit, req?.query?.page)
+    const { limit, page } = calcPayloadPagination(req?.query?.limit as string, req?.query?.page as string)
 
     const userPayments = await getUserPayments({
       userId: req.user!.id, options: {
@@ -244,7 +248,7 @@ export const handleGetUserPayments = async (req: Request, res: Response, next: N
 export const handleGetPaymentsForAdmin = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const status = req.query?.status as PaymentStatus
-    const { limit, page } = getPagination(req?.query?.limit, req?.query?.page)
+    const { limit, page } = calcPayloadPagination(req?.query?.limit as string, req?.query?.page as string)
 
     const payments = await getPayments({
       limit,
