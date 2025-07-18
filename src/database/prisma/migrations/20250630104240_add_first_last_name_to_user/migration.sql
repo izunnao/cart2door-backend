@@ -1,3 +1,0 @@
--- AlterTable
-ALTER TABLE "User" ADD COLUMN     "firstName" TEXT NOT NULL DEFAULT 'N/A',
-ADD COLUMN     "lastName" TEXT NOT NULL DEFAULT 'N/A';

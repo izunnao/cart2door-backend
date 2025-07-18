@@ -1,3 +1,0 @@
--- AlterTable
-ALTER TABLE "OrderItem" ALTER COLUMN "estimatedWeight" SET DEFAULT 0,
-ALTER COLUMN "estimatedWeight" SET DATA TYPE DOUBLE PRECISION;

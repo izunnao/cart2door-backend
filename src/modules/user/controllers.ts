@@ -4,11 +4,15 @@ import { throwErrorOn } from "../../utils/AppError.js";
 import { generateToken } from "../../utils/auth.js";
 import { sendMail } from "../../notification/services.js";
 import { templatePayloads } from "../../notification/utils/payload.temp.notification.js";
+import { comparePasswords, hashPassword } from "./utils.js";
 
 export const handleRegister = async (req: Request, res: Response, next: NextFunction) => {
     try {
         delete req.body.confirmPassword;
-        const newUser = await createUser(req.body);
+
+        const encryptedPassword = await hashPassword(req.body.password)
+
+        const newUser = await createUser({ ...req.body, password: encryptedPassword });
 
         console.log(newUser);
 
@@ -40,13 +44,13 @@ export const handleLogin = async (req: Request, res: Response, next: NextFunctio
         const user = await getUserByEmail(email);
 
         if (!user) {
-            throwErrorOn(!user, 401, 'Invalid email or password');
+            throwErrorOn(!user, 400, 'Invalid email or password');
             return;
         }
 
         // const isMatch = await bcrypt.compare(password, user.password);
-        const isMatch = password === user.password;
-        throwErrorOn(!isMatch, 401, 'Invalid email or password');
+        const isMatch = comparePasswords(password, user.password)   ;
+        throwErrorOn(!isMatch, 400, 'Invalid email or password');
 
         const token = generateToken(
             { id: user.id, email: user.email },
@@ -54,11 +58,11 @@ export const handleLogin = async (req: Request, res: Response, next: NextFunctio
         );
 
         res.cookie('token', token, {
-                httpOnly: true,
-                secure: true,
-                sameSite: 'none',
-                maxAge: 3600 * 1000
-            })
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            maxAge: 3600 * 1000
+        })
             .status(200).json({
                 data: { user, token },
                 message: 'Login successful',

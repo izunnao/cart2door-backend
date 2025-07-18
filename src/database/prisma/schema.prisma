@@ -44,6 +44,7 @@ model User {
   payments        Payment[]
   shippingDetails ShippingDetail[]
   role            UserRole         @default(customer)
+  lastOrderNumber Int              @default(0)
 
   phone   String @default("N/A")
   address String @default("N/A")
@@ -53,27 +54,34 @@ model User {
 }
 
 model Order {
-  id            String        @id @default(uuid())
-  userId        String
-  user          User          @relation(fields: [userId], references: [id])
-  userEmail     String        @default("n/a")
-  status        OrderStatus   @default(pending)
-  total         Float
-  createdAt     DateTime      @default(now())
-  fullName      String        @default("n/a")
-  phoneNumber   String        @default("n/a")
-  email         String        @default("n/a")  //recipient email
-  street        String        @default("n/a")
-  city          String        @default("n/a")
-  state         String        @default("n/a")
-  paymentMethod PaymentMethod @default(paystack)
-  handlingFee   Float         @default(0)
-  deliveryFee   Float         @default(0)
-  vat           Float         @default(0)
-  updatedAt     DateTime      @default(now()) @updatedAt
+  id             String      @id @default(uuid())
+  userId         String
+  user           User        @relation(fields: [userId], references: [id])
+  userEmail      String      @default("n/a")
+  status         OrderStatus @default(pending)
+  subTotal       Float       @default(0)
+  total          Float
+  subTotalNaira  Float       @default(0)
+  totalNaira     Float       @default(0)
+  createdAt      DateTime    @default(now())
+  fullName       String      @default("n/a")
+  phoneNumber    String      @default("n/a")
+  recipientEmail String      @default("n/a")
+  street         String      @default("n/a")
+  city           String      @default("n/a")
+  state          String      @default("n/a")
+  handlingFee    Float       @default(0)
+  deliveryFee    Float       @default(0)
+  customFee      Float       @default(0)
+  orderNumber    Int         @default(0)
+  vat            Float       @default(0)
+  updatedAt      DateTime    @default(now()) @updatedAt
+  shippedAt      DateTime?
+  deliveredAt    DateTime?
+  items          OrderItem[]
+  payments       Payment[]   @relation("OrderPayments")
 
-  items    OrderItem[]
-  payments Payment[]   @relation("OrderPayments")
+  @@unique([userId, orderNumber], name: "user_order_number_unique")
 }
 
 model Payment {
@@ -86,6 +94,7 @@ model Payment {
   amountInGBP Float         @default(0)
   amount      Float
   currency    String        @default("NGN")
+  orderNumber Int           @default(0)
   status      PaymentStatus @default(pending)
   accessCode  String
   reference   String        @unique

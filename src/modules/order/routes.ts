@@ -1,12 +1,13 @@
 import { Router } from "express";
-import { handleAddOrder, handleAddShipping, handleGetInternalFXRate, handleGetOrders, handleGetOrdersForAdmin, handleGetPaymentsForAdmin, handleGetShipping, handleGetUserPayments, handleVerifyPayment } from "./controllers.js";
-import { addOrdersMiddleware, addShippingMiddleware, getOrdersMiddleware, getUserPaymentsMiddleware } from "./middlewares.js";
+import { handleAddOrder, handleAddShipping, handleGetInternalFXRate, handleGetOrders, handleGetOrdersForAdmin, handleGetPaymentsForAdmin, handleGetShipping, handleGetUserPayments, handleUpdateOrderStatus, handleVerifyPayment } from "./controllers.js";
+import { addOrdersMiddleware, addShippingMiddleware, getOrdersMiddleware, getUserPaymentsMiddleware, updateOrderStatusMiddleware } from "./middlewares.js";
 import { authenticate, authorize } from "../../middlewares/auth.js";
 
 const orderRoute = Router()
 
 orderRoute.post('/', authenticate, addOrdersMiddleware, handleAddOrder)
             .get('/', authenticate, getOrdersMiddleware, handleGetOrders)
+            .put('/order/status', updateOrderStatusMiddleware, handleUpdateOrderStatus)
             .get('/admin', authenticate, authorize, handleGetOrdersForAdmin);
 
 

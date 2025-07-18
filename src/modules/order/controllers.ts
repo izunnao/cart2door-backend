@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { createOrderPaymentWithItems, createShippingDetail, getOrders, getPayments, getUserPayments, getUserShippingDetails, updatePaymentAndOrder } from "./repositories.js";
+import { createOrderPaymentWithItems, createShippingDetail, getOrders, getPayments, getUserPayments, getUserShippingDetails, updateOrder, updatePaymentAndOrder } from "./repositories.js";
 import { throwErrorOn } from "../../utils/AppError.js";
 import { getPublicFXRate, calcPayloadPagination, calcInternalFXRate } from "../../utils/general.js";
 import { Order, OrderStatus, PaymentStatus } from "@prisma/client";
@@ -8,8 +8,12 @@ import { extractOrderCreationShippingDetails } from "./helpers.js";
 import { getInternalPaymentStatus, verifyTransaction } from "../../utils/paystack.js";
 import { getRemainingAmount, validateMinimumOrder } from "../../utils/pricing.js";
 import { MINIMUM_ORDER_GBP } from "../../utils/constants.js";
+import { sendMail } from "../../notification/services.js";
+import { templateContexts } from "../../notification/utils/context.temp.notification.js";
+import { templatePayloads } from "../../notification/utils/payload.temp.notification.js";
 
 export const handleAddOrder = async (req: Request, res: Response, next: NextFunction) => {
+  const user = req.user!;
   const { shippingDetails, items } = req.body;
   let publicFXRate: unknown;
 
@@ -33,12 +37,32 @@ export const handleAddOrder = async (req: Request, res: Response, next: NextFunc
       throwErrorOn(!isMinimumMet, 400, `Order subtotal must be atleast £${MINIMUM_ORDER_GBP} you need extra £${remainingAmount} to complete`)
     }
 
-    const paymentInfo = await createOrderPaymentWithItems({
+    const { paymentInfo, items: orderItems, order } = await createOrderPaymentWithItems({
+      user: user,
       userId: req.user!.id,
       userEmail: req.user!.email,
       items: itemsWithNairaPrice,
       shippingDetails: extractOrderCreationShippingDetails(shippingDetails),
       internalFXRate
+    })
+
+    await sendMail({
+      to: user.email,
+      context: 'orderCreated',
+      payload: templatePayloads.orderCreated({
+        customerName: user.firstName,
+        items: orderItems.map(item => ({ name: item.productName, quantity: item.quantity, price: item.price })),
+        orderDate: order.createdAt.toISOString(),
+        orderId: order.id,
+        orderTotal: order.total,
+        shippingAddress: {
+          city: order.city,
+          state: order.state,
+          street: order.street,
+        },
+        supportEmail: 'support@cart2door.ng'
+      }),
+      subject: 'Order Created'
     })
 
     res.status(200).json({
@@ -91,7 +115,7 @@ export const handleGetOrdersForAdmin = async (req: Request, res: Response, next:
     const { status } = req.query
     const { limit, page } = calcPayloadPagination(req?.query?.limit as string, req?.query?.page as string)
 
-    const mainStatus = status as unknown as 'pending' | 'ordered' | 'shipped' | 'delivered'
+    const mainStatus = status as OrderStatus
 
     let where: Partial<Order> = {}
 
@@ -114,6 +138,72 @@ export const handleGetOrdersForAdmin = async (req: Request, res: Response, next:
 };
 
 
+
+
+
+export const handleUpdateOrderStatus = async (req: Request, res: Response, next: NextFunction) => {
+  const { orderId, status } = req.body;
+
+  try {
+    const updateData: any = {
+      status: status,
+      updatedAt: new Date()
+    };
+
+    // Add status-specific fields
+    if (status === 'cancelled') {
+      updateData.cancelledAt = new Date();
+    }
+
+    if (status === 'shipped') {
+      updateData.shippedAt = new Date();
+    }
+
+    if (status === 'delivered') {
+      updateData.deliveredAt = new Date();
+    }
+
+
+    console.log('got here  : ', updateData);
+
+    const updatedOrder = await updateOrder(
+      { id: orderId as string },
+      updateData);
+
+    if (!updatedOrder) {
+      return throwErrorOn(true, 404, 'Order not found')
+    }
+
+    console.log('after updating...', updatedOrder)
+
+    // Send notification email
+    await sendMail({
+      to: updatedOrder.userEmail,
+      // to:  'taofeekibrahimope@gmail.com',
+      context: 'orderStatusUpdate',
+      payload: templatePayloads.orderStatusUpdate({
+        customerName: updatedOrder.fullName,
+        newStatus: updatedOrder.status,
+        orderDate: updatedOrder.createdAt.toISOString(),
+        orderId: updatedOrder.id,
+        orderTotal: updatedOrder.total,
+        supportEmail: 'support@cart2door.ng'
+      }),
+      subject: 'Order Status Update'
+    });
+
+
+    console.log('after mail.. ')
+
+    res.status(200).json({
+      success: true,
+      message: 'Order updated successfully'
+    });
+  } catch (error) {
+    next(error)
+    console.error('Failed to update order status:', error);
+  }
+};
 
 
 export const handleAddShipping = async (req: Request, res: Response, next: NextFunction) => {

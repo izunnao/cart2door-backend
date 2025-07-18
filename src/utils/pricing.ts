@@ -16,7 +16,7 @@ export const deliveryFeeRateGBP: Record<string, number> = {
 }
 
                                                //internal fx rate
-export const getDeliveryFee = (state: string, fxRate: number) => {
+export const getDeliveryFeeNGN = (state: string, fxRate: number) => {
     const rate = deliveryFeeRateGBP[state]
 
     if (!rate) {
@@ -27,7 +27,7 @@ export const getDeliveryFee = (state: string, fxRate: number) => {
 }
 
 
-export const getHandlingFee = (handlingFeeGBP: number, fxRate: number) => {
+export const getHandlingFeeNGN = (handlingFeeGBP: number, fxRate: number) => {
     return handlingFeeGBP * fxRate
 }
 
@@ -38,9 +38,10 @@ export const calcOrderSummary = (subtotalGBP: number, internalFxRate: number, st
     const subtotalNGN = Math.round(subtotalGBP * internalFxRate);
     const customsDuty = Math.round(subtotalNGN * 0.1); // 10% customs
     const vat = Math.round((subtotalNGN + customsDuty) * 0.075) // 7.5% VAT
-    const handlingFee = getHandlingFee(HANDLING_FEE_GBP, internalFxRate);
-    const deliveryFee = getDeliveryFee(state?.toLocaleLowerCase(), internalFxRate);
-    const nairaTotal = subtotalNGN + customsDuty + vat + deliveryFee + handlingFee;
+    const handlingFeeNGN = getHandlingFeeNGN(HANDLING_FEE_GBP, internalFxRate);
+    const deliveryFeeNGN = getDeliveryFeeNGN(state?.toLocaleLowerCase(), internalFxRate);
+    const totalNGN = subtotalNGN + customsDuty + vat + deliveryFeeNGN + handlingFeeNGN;
+    
 
     // Minimum order validation
     const isMinimumMet = validateMinimumOrder(subtotalGBP);
@@ -48,5 +49,5 @@ export const calcOrderSummary = (subtotalGBP: number, internalFxRate: number, st
     const progressPercentage = Math.min((subtotalGBP / MINIMUM_ORDER_GBP) * 100, 100);
 
 
-    return { subtotalNGN, customsDuty, vat, handlingFee, deliveryFee, nairaTotal, isMinimumMet, remainingAmount, progressPercentage };
+    return { subtotalNGN, customsDuty, vat, handlingFeeNGN, deliveryFeeNGN, totalNGN, isMinimumMet, remainingAmount, progressPercentage };
 }

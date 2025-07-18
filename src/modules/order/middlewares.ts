@@ -1,8 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
 import { throwErrorOn } from '../../utils/AppError.js';
-import { getShippingDetailsById } from './repositories.js';
+import { getOrderById, getShippingDetailsById } from './repositories.js';
 import { extractErrorMessage } from '../../utils/error.js';
+import { OrderStatus } from '@prisma/client';
+import { StatusTransitions } from './utils.js';
 
 export const addOrdersMiddleware = async (req: Request, res: Response, next: NextFunction) => {
 
@@ -68,6 +70,42 @@ export const getOrdersMiddleware = (req: Request, res: Response, next: NextFunct
 
         const { error } = schema.validate(req.query);
         throwErrorOn(Boolean(error), 400, error?.details?.[0].message || 'Invalid query parameters');
+
+        next();
+    } catch (err) {
+        next(err);
+    }
+};
+
+
+
+export const updateOrderStatusMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const schema = Joi.object({
+            status: Joi.string().valid('pending', 'paid', 'confirmed', 'ordered', 'shipped', 'delivered', 'cancelled').required(),
+            orderId: Joi.string().uuid().required(),
+        });
+
+        console.log(req.body);
+
+        const { error } = schema.validate(req.body);
+        throwErrorOn(Boolean(error), 400, error?.details?.[0].message || 'Invalid query parameters');
+
+
+        const { orderId, status } = req.body;
+
+        // Get current order status
+        const order = await getOrderById(orderId)
+
+        if (!order) {
+            return throwErrorOn(true, 400, 'Order not found');
+        }
+
+        if (!StatusTransitions[order.status as OrderStatus].includes(status as OrderStatus)) {
+            return throwErrorOn(true, 400, `Invalid status transition: ${order.status} to ${status}`)
+        }
+        
+        req.order = order;
 
         next();
     } catch (err) {

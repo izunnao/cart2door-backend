@@ -15,6 +15,8 @@ export const errorHandler = (
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Internal Server Error';
 
+  console.log(message)
+
   if (statusCode === 401 || statusCode === 403) {
     res.clearCookie('token', {
       httpOnly: true,

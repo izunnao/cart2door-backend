@@ -1,12 +1,10 @@
-// src/modules/order/repositories/order.repository.ts
-import { Order, OrderItem, OrderStatus, Payment, PaymentStatus, ShippingDetail } from '@prisma/client';
+import { Order, OrderItem, OrderStatus, Payment, PaymentStatus, Prisma, ShippingDetail, User } from '@prisma/client';
 import { prisma } from '../../database/prisma_config.js';
-import AppError from '../../utils/AppError.js';
+import AppError, { throwErrorOn } from '../../utils/AppError.js';
 import { initializeTransaction } from '../../utils/paystack.js';
 import { extractErrorMessage } from '../../utils/error.js';
-import { calcOrderSummary, deliveryFeeRateGBP, getDeliveryFee } from '../../utils/pricing.js';
-import { calcInternalFXRate, calcResponsePagination } from '../../utils/general.js';
-import { HANDLING_FEE_GBP } from '../../utils/constants.js';
+import { calcOrderSummary } from '../../utils/pricing.js';
+import { calcResponsePagination } from '../../utils/general.js';
 import { PaginationI } from '../../types/general.types.js';
 
 
@@ -84,9 +82,10 @@ export const createOrder = async (
 
 
 export const createOrderPaymentWithItems = async (
-  { userId, userEmail, items, shippingDetails, internalFXRate }
+  { user, userId, userEmail, items, shippingDetails, internalFXRate }
     :
     {
+      user: User,
       userId: string,
       userEmail: string,
       items: Omit<OrderItem, 'id' | 'orderId' | 'createdAt'>[],
@@ -94,31 +93,47 @@ export const createOrderPaymentWithItems = async (
       internalFXRate: number
     },
 ): Promise<{
-  "authorization_url": string,
-  "access_code": string,
-  "reference": string
+  paymentInfo: {
+    "authorization_url": string,
+    "access_code": string,
+    "reference": string
+  },
+  order: Order,
+  items: Omit<OrderItem, 'id' | 'orderId' | 'createdAt'>[]
 }> => {
   return await prisma.$transaction(async (tx) => {
 
-    const GBPTotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0); // total in GBP
+    const subTotalGBP = items.reduce((sum, item) => sum + item.price * item.quantity, 0); // total in GBP
 
-    const { nairaTotal } = calcOrderSummary(GBPTotal, internalFXRate, shippingDetails.state);
+    const { totalNGN, subtotalNGN, vat, customsDuty, deliveryFeeNGN, handlingFeeNGN } = calcOrderSummary(subTotalGBP, internalFXRate, shippingDetails.state);
+
+    const {email: recipientEmail, createdAt, updatedAt, ...otherShippingDetails} = shippingDetails;
 
 
+    // console.log(shippingDetails);
+
+    const userLatestOrderNumber = user.lastOrderNumber + 1;
     // Step 1: Create order
     const order = await tx.order.create({
       data: {
-        userId,
-        userEmail,
-        total: GBPTotal,
-        handlingFee: HANDLING_FEE_GBP,
-        deliveryFee: deliveryFeeRateGBP[shippingDetails.state],
+        userId: user.id,
+        userEmail: user.email,
+        total: subTotalGBP,
+        totalNaira: totalNGN,
+        subTotalNaira: subtotalNGN,
+        subTotal: subTotalGBP,
+        handlingFee: handlingFeeNGN,
+        deliveryFee: deliveryFeeNGN,
+        customFee: customsDuty,
+        orderNumber: userLatestOrderNumber,
+        vat: vat,
         status: 'pending',
-        ...shippingDetails
+        recipientEmail,
+        ...otherShippingDetails
       },
     });
 
-    console.log('order info >>  ', order);
+    await tx.user.update({ where: { id: user.id }, data: { lastOrderNumber: userLatestOrderNumber } })
 
 
     // Step 2: Create items
@@ -134,28 +149,29 @@ export const createOrderPaymentWithItems = async (
     );
 
 
-    console.log('totalPayable  :: ', nairaTotal, '      total GBP :: ', GBPTotal, '      internal fx rate :: ', internalFXRate)
+    console.log('totalPayable  :: ', totalNGN, '      total GBP :: ', subTotalGBP, '      internal fx rate :: ', internalFXRate)
 
 
-    const paymentInfo = await initializeTransaction(userEmail, nairaTotal, 'http://localhost:8080/verify-payment', order.id) // order id is collected and used from metadata in transaction verification
-
-    console.log('paystack info >>  ', paymentInfo)
+    const paymentInfo = await initializeTransaction(userEmail, totalNGN, 'http://localhost:8080/verify-payment', order.id) // order id is collected and used from metadata in transaction verification
 
     await tx.payment.create({
       data: {
         userId,
         userEmail,
-        amount: nairaTotal,
-        amountInGBP: GBPTotal,
+        amount: totalNGN,
+        amountInGBP: subTotalGBP,
         status: PaymentStatus.pending,
         accessCode: paymentInfo.access_code,
         orderId: order.id,
         reference: paymentInfo.reference,
         currency: 'NGN',
+        orderNumber: userLatestOrderNumber
       },
     });
+    console.log('paystack info >>  ', paymentInfo)
 
-    return paymentInfo
+
+    return { order, items, paymentInfo }
   });
 };
 
@@ -245,6 +261,20 @@ export const updatePaymentAndOrder = async (order: { id: string, status: OrderSt
 }
 
 
+export const updateOrder = async (where: Prisma.OrderWhereUniqueInput, data: Partial<Order>): Promise<Order | undefined> => {
+  try {
+    const updatedOrder = await prisma.order.update({
+      where: where, // the type issue is here
+      data,
+    })
+
+    return updatedOrder
+  } catch (error) {
+    throwErrorOn(true, 500, extractErrorMessage(error))
+  }
+}
+
+
 interface GetUserPaymentsParams {
   userId: string;
   options?: {
@@ -268,7 +298,7 @@ export const getUserPayments = async ({ userId, options }: GetUserPaymentsParams
       skip: (page) * limit,
       orderBy: {
         createdAt: orderBy,
-      },
+      }
     });
 
     const totalPayments = await prisma.payment.count({

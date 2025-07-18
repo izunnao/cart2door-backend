@@ -28,7 +28,7 @@ app.use('/api/orders', orderRoute);
 
 // sendMail({
 //     to: 'taofeekibrahimope@gmail.com',
-//     payload: templatePayloads.registrationSuccess({ name: 'Ibrahim', verificationLink: '' }),
+//     payload: templatePayloads.registrationSuccess({ name: 'Ibrahim', id: '12343243', verificationLink: '' }),
 //     context: 'registrationSuccess',
 //     subject: 'Registration Success',
 // })
