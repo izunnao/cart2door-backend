@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { CONFIG_PAYSTACK_API_URL, CONFIG_PAYSTACK_SECRET_KEY } from "../config.js";
 import AppError, { throwErrorOn } from "./AppError.js";
 import { extractErrorMessage } from "./error.js";
@@ -14,7 +14,7 @@ export const initializeTransaction = async (
     orderId: string
 ) => {
 
-        logger.info('initializeTransaction', email, amount, callbackUrl, orderId)
+    logger.info(`initializeTransaction - params :, ${email}, ${amount}, ${callbackUrl}, ${orderId}`)
 
 
     try {
@@ -22,7 +22,7 @@ export const initializeTransaction = async (
             `${CONFIG_PAYSTACK_API_URL}/transaction/initialize`,
             {
                 email,
-                amount: amount * 100, // Convert to kobo (Paystack uses smallest currency unit)
+                amount: Math.ceil(amount * 100), // Convert to kobo and must not have decimal (Paystack uses smallest currency unit)
                 callback_url: callbackUrl,
                 metadata: {
                     orderId     // order id is collected and used from metadata in transaction verification
@@ -36,11 +36,11 @@ export const initializeTransaction = async (
             }
         );
 
-        logger.info('initializeTransaction', JSON.stringify(response.data.data))
+        logger.info(`initializeTransaction: ${JSON.stringify(response.data.data)}`)
 
         return response.data.data; // Contains access_code and authorization_url
-    } catch (error) {
-        logger.error('initializeTransaction', JSON.stringify(error))
+    } catch (error: any) {
+        logger.error(`initializeTransaction: ${JSON.stringify(error.response.data)}`)
         throwErrorOn(true, 400, `Failed to initialize transaction: ${extractErrorMessage(error)}`);
     }
 };
