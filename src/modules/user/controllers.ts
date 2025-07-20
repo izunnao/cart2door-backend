@@ -61,7 +61,7 @@ export const handleLogin = async (req: Request, res: Response, next: NextFunctio
             httpOnly: true,
             secure: true,
             sameSite: 'none',
-            maxAge: 3600 * 1000
+            maxAge: 24 * 60 * 60 * 1000 // 1 day
         })
             .status(200).json({
                 data: { user, token },
