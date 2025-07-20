@@ -32,11 +32,11 @@ export const initializeTransaction = async (
             }
         );
 
-        logger.info(JSON.stringify(response.data.data))
+        logger.info('initializeTransaction', JSON.stringify(response.data.data))
 
         return response.data.data; // Contains access_code and authorization_url
     } catch (error) {
-        logger.error(JSON.stringify(error))
+        logger.error('initializeTransaction', JSON.stringify(error))
         throwErrorOn(true, 400, `Failed to initialize transaction: ${extractErrorMessage(error)}`);
     }
 };
