@@ -3,6 +3,7 @@ import { templatePayloads } from "../notification/utils/payload.temp.notificatio
 import { PaginationI } from "../types/general.types.js";
 import { throwErrorOn } from "./AppError.js";
 import { HIGH_LEVEL_ALERT_MAILS } from "./constants.js";
+import memoryManager from "./memory.js";
 import redis from "./redis.js";
 import { retry } from "./retry.js";
 
@@ -35,7 +36,7 @@ export const calcResponsePagination = (totalData: number, limit: number, page: n
 
 export const getPublicFXRate = async (): Promise<number | undefined> => {
   try {
-    const publicFXRate = await redis.get('publicFXRate')
+    const publicFXRate = memoryManager.get('publicFXRate')
 
     if (Number(publicFXRate)) {
       return Number(publicFXRate)
@@ -49,7 +50,8 @@ export const getPublicFXRate = async (): Promise<number | undefined> => {
     if (data.rates && data.rates.NGN) {
       const nairaRate = Math.round(data.rates.NGN);
 
-      redis.set('publicFXRate', nairaRate)
+      memoryManager.set('publicFXRate', nairaRate)
+
       return nairaRate;
     } else {
       console.log('cant fetch fx rate...');
