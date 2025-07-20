@@ -13,6 +13,10 @@ export const initializeTransaction = async (
     callbackUrl: string,
     orderId: string
 ) => {
+
+        logger.info('initializeTransaction', email, amount, callbackUrl, orderId)
+
+
     try {
         const response = await axios.post(
             `${CONFIG_PAYSTACK_API_URL}/transaction/initialize`,
