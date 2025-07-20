@@ -7,6 +7,7 @@ import userRouter from './modules/user/routes.js';
 import orderRoute from './modules/order/routes.js';
 import { sendMail } from './notification/services.js';
 import { templatePayloads } from './notification/utils/payload.temp.notification.js';
+import { CONFIG_CLIENT_BASE_URL } from './config.js';
 
 dotenv.config();
 
@@ -14,7 +15,7 @@ const app: Application = express();
 
 // Middleware
 app.use(cors({
-    origin: 'http://localhost:8080',
+    origin: CONFIG_CLIENT_BASE_URL,
     credentials: true,
 }));
 app.use(express.json());
