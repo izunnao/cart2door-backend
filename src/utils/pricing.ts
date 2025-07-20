@@ -1,4 +1,4 @@
-import { HANDLING_FEE_GBP, MINIMUM_ORDER_GBP } from "./constants.js";
+import { DELIVERY_FEE_RATE_GBP, HANDLING_FEE_GBP, MINIMUM_ORDER_GBP } from "./constants.js";
 
 export const validateMinimumOrder = (subtotal: number): boolean => {
     return subtotal >= MINIMUM_ORDER_GBP;
@@ -7,23 +7,15 @@ export const validateMinimumOrder = (subtotal: number): boolean => {
 export const getRemainingAmount = (subtotal: number): number => {
     return Math.max(0, MINIMUM_ORDER_GBP - subtotal);
 };
-
-
-export const deliveryFeeRateGBP: Record<string, number> = {
-    lagos: 7,
-    abuja: 7.5,
-    portharcourt: 8
-}
-
                                                //internal fx rate
 export const getDeliveryFeeNGN = (state: string, fxRate: number) => {
-    const rate = deliveryFeeRateGBP[state]
+    const rate = DELIVERY_FEE_RATE_GBP[state]
 
     if (!rate) {
         return 0
     }
 
-    return deliveryFeeRateGBP[state] * fxRate
+    return DELIVERY_FEE_RATE_GBP[state] * fxRate
 }
 
 
