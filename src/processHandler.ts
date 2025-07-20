@@ -1,12 +1,10 @@
 import { IncomingMessage, Server, ServerResponse } from 'http';
 import { prisma } from "./database/prisma_config.js";
-import redis from "./utils/redis.js";
 
 function shutdown(server: Server<typeof IncomingMessage, typeof ServerResponse>) {
     console.log('\n🔄 Gracefully shutting down...');
 
     Promise.all([
-        redis.quit().catch((err) => console.error('Redis quit failed:', err)),
         prisma.$disconnect().catch((err) => console.error('Prisma disconnect failed:', err)),
         new Promise((res) => {
             if (server && server.close) server.close(res); // HTTP server

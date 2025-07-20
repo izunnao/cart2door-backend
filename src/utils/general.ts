@@ -4,7 +4,6 @@ import { PaginationI } from "../types/general.types.js";
 import { throwErrorOn } from "./AppError.js";
 import { HIGH_LEVEL_ALERT_MAILS } from "./constants.js";
 import memoryManager from "./memory.js";
-import redis from "./redis.js";
 import { retry } from "./retry.js";
 
 
