@@ -3,6 +3,7 @@ import { CONFIG_PAYSTACK_API_URL, CONFIG_PAYSTACK_SECRET_KEY } from "../config.j
 import AppError, { throwErrorOn } from "./AppError.js";
 import { extractErrorMessage } from "./error.js";
 import { PaymentStatus } from "@prisma/client";
+import { logger } from "./logger.js";
 
 
 
@@ -31,8 +32,11 @@ export const initializeTransaction = async (
             }
         );
 
+        logger.info(JSON.stringify(response.data.data))
+
         return response.data.data; // Contains access_code and authorization_url
     } catch (error) {
+        logger.error(JSON.stringify(error))
         throwErrorOn(true, 400, `Failed to initialize transaction: ${extractErrorMessage(error)}`);
     }
 };
