@@ -7,7 +7,7 @@ import userRouter from './modules/user/routes.js';
 import orderRoute from './modules/order/routes.js';
 import { sendMail } from './notification/services.js';
 import { templatePayloads } from './notification/utils/payload.temp.notification.js';
-import { CONFIG_CLIENT_BASE_URL } from './config.js';
+import { CONFIG_CLIENT_BASE_URL, CONFIG_SERVER_MODE } from './config.js';
 
 dotenv.config();
 
