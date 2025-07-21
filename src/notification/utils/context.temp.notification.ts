@@ -6,7 +6,7 @@ import { TemplatePayloadType } from "../types.js";
 
 export const templateContexts: Record<keyof TemplatePayloadType, (value: any) => string> = {
   registrationSuccess: (data: TemplatePayloadType['registrationSuccess']) =>
-    registrationSuccessEmail(data.name, data.id, data.verificationLink),
+    registrationSuccessEmail(data.name),
   fxRateAlertEmailI: (data: TemplatePayloadType['fxRateAlertEmailI']) => fxRateAlertEmail(data),
   orderStatusUpdate: (data: TemplatePayloadType['orderStatusUpdate']) => orderStatusUpdateEmail(data),
   orderCreated: (data: TemplatePayloadType['orderCreated']) => orderCreatedEmail(data)

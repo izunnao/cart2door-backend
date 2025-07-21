@@ -18,7 +18,7 @@ export const handleRegister = async (req: Request, res: Response, next: NextFunc
 
         sendMail({
             to: newUser.email,
-            payload: templatePayloads.registrationSuccess({ name: newUser.firstName, id: newUser.id, verificationLink: '' }),
+            payload: templatePayloads.registrationSuccess({ name: newUser.firstName }),
             context: 'registrationSuccess',
             subject: 'Registration Success',
         })

@@ -1,6 +1,6 @@
 import { emailFooterTemp } from "./footer.temp.notification.js";
 
-export const registrationSuccessEmail = (userName: string, userId: string, loginUrl: string) => `
+export const registrationSuccessEmail = (userName: string) => `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -65,11 +65,11 @@ export const registrationSuccessEmail = (userName: string, userId: string, login
             <p style="margin: 0 0 1rem;">Your account has been successfully created and you can now access all the features available to our members.</p>
             
             <div style="text-align: center; margin: 2rem 0;">
-                <a href="${loginUrl}" class="button">Get Started</a>
+                <a href="https://www.cart2door.ng/login" class="button">Get Started</a>
             </div>
             
             <p style="margin: 1.5rem 0 0; font-size: 0.875rem; color: #64748B;">
-                If you didn't request this registration, please ignore this email or contact support.
+                If you didn't request this registration, contact support.
             </p>
         </div>
         

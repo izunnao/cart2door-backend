@@ -26,7 +26,7 @@ export const sendMail = async ({
   try {
     await retry(async () =>
       await zeptomailer.sendMail({
-        from: 'Cart2Door <no-reply@cart2door.ng>',
+        from: 'Cart2Door - NoReply <no-reply@cart2door.ng>',
         to,
         subject,
         html: template,

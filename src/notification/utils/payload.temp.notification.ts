@@ -8,8 +8,6 @@ type TemplateFunctions = {
 export const templatePayloads: TemplateFunctions = {
   registrationSuccess: (data: TemplatePayloadType['registrationSuccess']): TemplatePayloadType['registrationSuccess'] => ({
     name: data.name,
-    id: data.id,
-    verificationLink: data.verificationLink || '#',
   }),
   fxRateAlertEmailI: (data: TemplatePayloadType['fxRateAlertEmailI']): TemplatePayloadType['fxRateAlertEmailI'] => ({
     apiUrl: data.apiUrl,
