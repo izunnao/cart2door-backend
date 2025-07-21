@@ -69,7 +69,7 @@ export const registrationSuccessEmail = (userName: string) => `
             </div>
             
             <p style="margin: 1.5rem 0 0; font-size: 0.875rem; color: #64748B;">
-                If you didn't request this registration, contact support.
+                If you didn't request this registration, contact support: support@cart2door.ng
             </p>
         </div>
         
