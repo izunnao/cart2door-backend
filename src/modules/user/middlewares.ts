@@ -1,9 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
 import { throwErrorOn } from '../../utils/AppError.js';
+import { getUserByEmail } from './repositories.js';
 
 
-export const registerMiddleware = (req: Request, res: Response, next: NextFunction) => {
+export const registerMiddleware = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const registerSchema = Joi.object({
             firstName: Joi.string().min(2).max(50).required(),
@@ -17,7 +18,7 @@ export const registerMiddleware = (req: Request, res: Response, next: NextFuncti
                     'string.pattern.base': 'Phone must contain only 11 digits',
                 }),
             password: Joi.string().min(6).required(),
-            role: Joi.string().valid('admin', 'customer').required(),
+            role: Joi.string().valid('customer').required(),
             confirmPassword: Joi.string().valid(Joi.ref('password')).required().messages({
                 'any.only': 'Passwords do not match',
             }),
@@ -28,6 +29,12 @@ export const registerMiddleware = (req: Request, res: Response, next: NextFuncti
         const { error } = registerSchema.validate(req.body);
 
         throwErrorOn(Boolean(error), 400, error?.details?.[0].message || "")
+
+
+        // check if user not exist with email with prisma, use the throwErrorOn util function
+        const existingUser = await getUserByEmail(req.body.email)
+
+        throwErrorOn(Boolean(existingUser), 409, 'User already exists with this email');
 
         next();
     } catch (error) {
