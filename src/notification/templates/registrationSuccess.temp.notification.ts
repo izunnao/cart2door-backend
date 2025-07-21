@@ -73,7 +73,7 @@ export const registrationSuccessEmail = (userName: string, userId: string, login
             </p>
         </div>
         
-        ${emailFooterTemp(userId)}
+        ${emailFooterTemp()}
     </div>
 </body>
 </html>

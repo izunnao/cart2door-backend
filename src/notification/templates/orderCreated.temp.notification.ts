@@ -61,7 +61,7 @@ export const orderCreatedEmail = (variables: TemplatePayloadType['orderCreated']
             </p>
         </div>
         
-        ${emailFooterTemp('', 'Random address')}
+        ${emailFooterTemp()}
     </div>
 </body>
 </html>
