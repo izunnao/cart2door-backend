@@ -25,13 +25,13 @@ enum UserRole {
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "debian-openssl-1.1.x"]
 }
 
 datasource db {
-  provider          = "postgresql"
-  url               = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -46,8 +46,8 @@ model User {
   role            UserRole         @default(customer)
   lastOrderNumber Int              @default(0)
 
-  phone   String @default("N/A")
-  address String @default("N/A")
+  phone   String  @default("N/A")
+  address String?
 
   firstName String @default("N/A")
   lastName  String @default("N/A")
