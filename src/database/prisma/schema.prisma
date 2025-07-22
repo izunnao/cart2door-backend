@@ -43,6 +43,8 @@ model User {
   orders          Order[]
   payments        Payment[]
   shippingDetails ShippingDetail[]
+  isEmailVerified Boolean          @default(false)
+  otp             String?
   role            UserRole         @default(customer)
   lastOrderNumber Int              @default(0)
 
