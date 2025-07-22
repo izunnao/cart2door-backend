@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
 import { throwErrorOn } from '../../utils/AppError.js';
-import { getUserByEmail } from './repositories.js';
+import { getUserByEmail, getUserByOtpAndEmail } from './repositories.js';
 
 
 export const registerMiddleware = async (req: Request, res: Response, next: NextFunction) => {
@@ -41,6 +41,50 @@ export const registerMiddleware = async (req: Request, res: Response, next: Next
         next(error);
     }
 };
+
+
+export const verifyOtpMiddleware = async (req: Request, res: Response, next: NextFunction) => {
+
+    try {
+
+        console.log('email', req.body.email, 'pass', req.body.otp);
+
+        const otpSchema = Joi.object({
+            email: Joi.string().email().required(),
+            otp: Joi.string()
+                .length(4)
+                .pattern(/^\d+$/)
+                .required()
+                .messages({
+                    'string.length': 'OTP must be exactly 4 digits',
+                    'string.pattern.base': 'OTP must contain only digits',
+                })
+        })
+
+        throwErrorOn(!req.body, 400, 'You need to pass a payload')
+
+        const { error } = otpSchema.validate(req.body);
+
+        throwErrorOn(Boolean(error), 400, error?.details?.[0].message || "")
+
+
+        const existingUser = await getUserByEmail(req.body.email)
+
+        throwErrorOn(!Boolean(existingUser), 409, 'User with this email does not exist');
+
+        if (existingUser?.otp !== req.body.otp) {
+            return throwErrorOn(true, 409, 'OTP is invalid');
+        }
+
+        req.user = existingUser;
+
+        console.log(existingUser);
+
+        next()
+    } catch (error) {
+        next(error)
+    }
+}
 
 
 

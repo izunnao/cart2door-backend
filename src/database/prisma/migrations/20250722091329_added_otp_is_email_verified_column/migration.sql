@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "isEmailVerified" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "otp" TEXT,
+ALTER COLUMN "address" DROP NOT NULL,
+ALTER COLUMN "address" DROP DEFAULT;

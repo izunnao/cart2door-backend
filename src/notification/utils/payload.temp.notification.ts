@@ -8,6 +8,7 @@ type TemplateFunctions = {
 export const templatePayloads: TemplateFunctions = {
   registrationSuccess: (data: TemplatePayloadType['registrationSuccess']): TemplatePayloadType['registrationSuccess'] => ({
     name: data.name,
+    otp: data.otp
   }),
   fxRateAlertEmailI: (data: TemplatePayloadType['fxRateAlertEmailI']): TemplatePayloadType['fxRateAlertEmailI'] => ({
     apiUrl: data.apiUrl,
@@ -31,5 +32,8 @@ export const templatePayloads: TemplateFunctions = {
     orderTotal: data.orderTotal,
     shippingAddress: data.shippingAddress,
     supportEmail: data.supportEmail
-  })
+  }),
+  verifyOtpSucess: (data: TemplatePayloadType['verifyOtpSucess']): TemplatePayloadType['verifyOtpSucess'] => ({
+    firstName: data.firstName
+  }),
 };

@@ -77,3 +77,9 @@ export const converGBPToNaira = (gbp: number, fxRate: number) => {
 export const calcInternalFXRate = (fxRate: number) => {
   return fxRate * 1.15;
 }
+
+
+export const generateOtp = (): string => {
+  const otp = Math.floor(1000 + Math.random() * 9000).toString();
+  return otp.padStart(4, '0'); // Ensures 4 digits (e.g., "0423")
+};

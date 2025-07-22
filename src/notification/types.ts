@@ -1,6 +1,7 @@
 export type TemplatePayloadType = {
     registrationSuccess: {
         name: string,
+        otp: string
     },
     fxRateAlertEmailI: {
         timestamp: string,
@@ -33,4 +34,7 @@ export type TemplatePayloadType = {
             state: string;
         };
     },
+    verifyOtpSucess: {
+        firstName: string
+    }
 }

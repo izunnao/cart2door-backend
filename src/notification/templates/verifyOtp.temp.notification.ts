@@ -1,12 +1,12 @@
 import { emailFooterTemp } from "./footer.temp.notification.js";
 
-export const registrationSuccessEmail = (userName: string, otp: string) => `
+export const verifyOtpSuccessEmail = (firstName: string) => `
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to Our Platform!</title>
+  <title>OTP Verification Successful</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
@@ -38,18 +38,6 @@ export const registrationSuccessEmail = (userName: string, otp: string) => `
       color: #0F172A;
     }
 
-    .otp-box {
-      display: inline-block;
-      padding: 16px 24px;
-      background-color: #F1F5F9;
-      color: #0F172A;
-      font-size: 1.5rem;
-      font-weight: 600;
-      border-radius: 8px;
-      letter-spacing: 2px;
-      margin: 1.5rem 0;
-    }
-
     .button {
       display: inline-block;
       padding: 12px 24px;
@@ -65,29 +53,23 @@ export const registrationSuccessEmail = (userName: string, otp: string) => `
 <body>
   <div class="container">
     <div class="header">
-      <h1 style="margin: 0; font-size: 1.5rem; font-weight: 700;">Welcome Aboard!</h1>
-      <p style="margin: 0.5rem 0 0; opacity: 0.9;">Your registration was successful</p>
+      <h1 style="margin: 0; font-size: 1.5rem; font-weight: 700;">OTP Verification Successful!</h1>
+      <p style="margin: 0.5rem 0 0; opacity: 0.9;">Your account is now verified</p>
     </div>
 
     <div class="content">
-      <p style="margin: 0 0 1rem;">Hello ${userName},</p>
+      <p style="margin: 0 0 1rem;">Hello ${firstName},</p>
 
-      <p style="margin: 0 0 1rem;">Thank you for registering with us! We're excited to have you as part of our community.</p>
+      <p style="margin: 0 0 1rem;">We're excited to confirm that your one-time password (OTP) verification was successful.</p>
 
-      <p style="margin: 0 0 1rem;">Use the following One-Time Password (OTP) to verify your email address:</p>
-
-      <div style="text-align: center;">
-        <div class="otp-box">${otp}</div>
-      </div>
-
-      <p style="margin: 1rem 0;">Your account has been successfully created and you can now access all the features available to our members.</p>
+      <p style="margin: 0 0 1rem;">Your account is now fully verified. Start shopping or manage your orders now!</p>
 
       <div style="text-align: center; margin: 2rem 0;">
-        <a href="https://www.cart2door.ng/login" class="button">Get Started</a>
+        <a href="https://www.cart2door.ng/login" class="button">Login</a>
       </div>
 
       <p style="margin: 1.5rem 0 0; font-size: 0.875rem; color: #64748B;">
-        If you didn't request this registration, contact support: support@cart2door.ng
+        If you did not initiate this verification, please contact our support team at <a href="mailto:support@cart2door.ng" style="color: #2E6EFF; text-decoration: none;">support@cart2door.ng</a>.
       </p>
     </div>
 
