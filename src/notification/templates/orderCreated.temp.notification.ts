@@ -30,7 +30,7 @@ export const orderCreatedEmail = (variables: TemplatePayloadType['orderCreated']
         <div class="content">
             <p style="margin: 0 0 16px;">Dear ${variables.customerName},</p>
             
-            <p style="margin: 0 0 16px;">We've received your order #${variables.orderId} placed on ${variables.orderDate}. Here's what you ordered:</p>
+            <p style="margin: 0 0 16px;">We've received your order #${variables.orderNumber} placed on ${variables.orderDate}. Here's what you ordered:</p>
             
             ${variables.items.map(item => `
                 <div class="item-card">

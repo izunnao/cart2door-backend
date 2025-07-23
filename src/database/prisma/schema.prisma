@@ -45,6 +45,7 @@ model User {
   shippingDetails ShippingDetail[]
   isEmailVerified Boolean          @default(false)
   otp             String?
+  otpExpireAt     DateTime?
   role            UserRole         @default(customer)
   lastOrderNumber Int              @default(0)
 

@@ -28,6 +28,7 @@ export const templatePayloads: TemplateFunctions = {
     customerName: data.customerName,
     items: data.items,
     orderDate: data.orderDate,
+    orderNumber: data.orderNumber,
     orderId: data.orderId,
     orderTotal: data.orderTotal,
     shippingAddress: data.shippingAddress,
@@ -35,5 +36,10 @@ export const templatePayloads: TemplateFunctions = {
   }),
   verifyOtpSucess: (data: TemplatePayloadType['verifyOtpSucess']): TemplatePayloadType['verifyOtpSucess'] => ({
     firstName: data.firstName
+  }),
+  otpVerification: (data: TemplatePayloadType['otpVerification']): TemplatePayloadType['otpVerification'] => ({
+    firstName: data.firstName,
+    otp: data.otp,
+    expiryMinutes: data.expiryMinutes
   }),
 };

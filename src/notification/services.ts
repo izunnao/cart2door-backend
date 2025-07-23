@@ -10,6 +10,7 @@ interface SendMailOptions {
   payload: Record<string, any>
 }
 
+// because I am not throwing error, I can call this function after response has been sent
 export const sendMail = async ({
   to,
   subject,

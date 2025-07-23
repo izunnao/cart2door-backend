@@ -46,6 +46,12 @@ export const handleAddOrder = async (req: Request, res: Response, next: NextFunc
       internalFXRate
     })
 
+    res.status(200).json({
+      data: paymentInfo,
+      isSuccess: true,
+      message: 'Order created successfully'
+    })
+
     await sendMail({
       to: user.email,
       context: 'orderCreated',
@@ -54,6 +60,7 @@ export const handleAddOrder = async (req: Request, res: Response, next: NextFunc
         items: orderItems.map(item => ({ name: item.productName, quantity: item.quantity, price: item.price })),
         orderDate: order.createdAt.toISOString(),
         orderId: order.id,
+        orderNumber: order.orderNumber,
         orderTotal: order.total,
         shippingAddress: {
           city: order.city,
@@ -63,12 +70,6 @@ export const handleAddOrder = async (req: Request, res: Response, next: NextFunc
         supportEmail: 'support@cart2door.ng'
       }),
       subject: 'Order Created'
-    })
-
-    res.status(200).json({
-      data: paymentInfo,
-      isSuccess: true,
-      message: 'Order created successfully'
     })
   } catch (err) {
     next(err)
@@ -176,10 +177,16 @@ export const handleUpdateOrderStatus = async (req: Request, res: Response, next:
 
     console.log('after updating...', updatedOrder)
 
-    // Send notification email
+
+    console.log('after mail.. ')
+
+    res.status(200).json({
+      success: true,
+      message: 'Order updated successfully'
+    });
+
     await sendMail({
       to: updatedOrder.userEmail,
-      // to:  'taofeekibrahimope@gmail.com',
       context: 'orderStatusUpdate',
       payload: templatePayloads.orderStatusUpdate({
         customerName: updatedOrder.fullName,
@@ -190,14 +197,6 @@ export const handleUpdateOrderStatus = async (req: Request, res: Response, next:
         supportEmail: 'support@cart2door.ng'
       }),
       subject: 'Order Status Update'
-    });
-
-
-    console.log('after mail.. ')
-
-    res.status(200).json({
-      success: true,
-      message: 'Order updated successfully'
     });
   } catch (error) {
     next(error)

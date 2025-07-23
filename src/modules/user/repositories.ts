@@ -34,9 +34,9 @@ export const getUserByOtpAndEmail = async (otp: string, email: string): Promise<
     }
 };
 
-export const createUser = async (data: Pick<User, 'email' | 'password' | 'phone' | 'address'>): Promise<User> => {
+export const createUser = async (data: Omit<User, 'id'>): Promise<User> => {
     try {
-        return prisma.user.create({ data });
+        return await prisma.user.create({ data });
     } catch (error) {
         throw error
     }

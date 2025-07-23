@@ -3,6 +3,11 @@ export type TemplatePayloadType = {
         name: string,
         otp: string
     },
+    otpVerification: {
+        firstName: string,
+        otp: string,
+        expiryMinutes?: number
+    },
     fxRateAlertEmailI: {
         timestamp: string,
         apiUrl: string,
@@ -19,6 +24,7 @@ export type TemplatePayloadType = {
     },
     orderCreated: {
         orderId: string;
+        orderNumber: number;
         customerName: string;
         orderDate: string;
         orderTotal: number;

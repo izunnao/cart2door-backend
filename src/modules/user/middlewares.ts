@@ -72,10 +72,6 @@ export const verifyOtpMiddleware = async (req: Request, res: Response, next: Nex
 
         throwErrorOn(!Boolean(existingUser), 409, 'User with this email does not exist');
 
-        if (existingUser?.otp !== req.body.otp) {
-            return throwErrorOn(true, 409, 'OTP is invalid');
-        }
-
         req.user = existingUser;
 
         console.log(existingUser);

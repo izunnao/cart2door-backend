@@ -80,7 +80,7 @@ export const registrationSuccessEmail = (userName: string, otp: string) => `
         <div class="otp-box">${otp}</div>
       </div>
 
-      <p style="margin: 1rem 0;">Your account has been successfully created and you can now access all the features available to our members.</p>
+      <p style="margin: 1rem 0;">OTP will expire within 10 minutes, if not used</p>
 
       <div style="text-align: center; margin: 2rem 0;">
         <a href="https://www.cart2door.ng/login" class="button">Get Started</a>
