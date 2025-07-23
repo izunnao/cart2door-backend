@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
 import { throwErrorOn } from '../../utils/AppError.js';
-import { getOrderById, getShippingDetailsById } from './repositories.js';
+import { getOrderById } from './repositories.js';
 import { extractErrorMessage } from '../../utils/error.js';
 import { OrderStatus } from '@prisma/client';
 import { StatusTransitions } from './utils.js';
