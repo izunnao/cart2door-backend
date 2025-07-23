@@ -51,7 +51,7 @@ export const changePasswordMiddleware = async (req: Request, res: Response, next
         const registerSchema = Joi.object({
             currentPassword: Joi.string().min(6).required(),
             newPassword: Joi.string().min(6).required(),
-            confirmPassword: Joi.string().valid(Joi.ref('password')).required().messages({
+            confirmPassword: Joi.string().valid(Joi.ref('newPassword')).required().messages({
                 'any.only': 'Passwords do not match',
             }),
         });
@@ -62,7 +62,7 @@ export const changePasswordMiddleware = async (req: Request, res: Response, next
 
         throwErrorOn(Boolean(error), 400, error?.details?.[0].message || "")
 
-        const isMatch = comparePasswords(req.body.currentPassword, user.password);
+        const isMatch = await comparePasswords(req.body.currentPassword, user.password);
         throwErrorOn(!isMatch, 400, 'Current password is incorrect');
 
         next();

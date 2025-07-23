@@ -114,7 +114,10 @@ export const handleLogin = async (req: Request, res: Response, next: NextFunctio
             return;
         }
 
-        const isMatch = comparePasswords(password, user.password);
+        const isMatch = await comparePasswords(password, user.password);
+
+        console.log('login >> ', isMatch, password);
+
         throwErrorOn(!isMatch, 400, 'Invalid email or password');
 
         if (!user.isEmailVerified) {
@@ -166,13 +169,19 @@ export const handleChangePassword = async (req: Request, res: Response, next: Ne
     try {
         const user = req.user!;
 
+        console.log(req.body);
+
         const encryptedPassword = await hashPassword(req.body.newPassword)
 
-
-        await updateUser(user.id, {
+        const updatedUser = await updateUser(user.id, {
             password: encryptedPassword,
         })
 
+        res.status(200).json({
+            data: updatedUser,
+            message: 'Password changed successfully',
+            isSuccess: true
+        })
     } catch (error) {
         next(error)
     }
