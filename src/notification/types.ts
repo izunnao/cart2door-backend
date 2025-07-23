@@ -44,3 +44,16 @@ export type TemplatePayloadType = {
         firstName: string
     }
 }
+
+
+
+
+
+export interface SendMailOptions {
+  to: string | string[];
+  subject: string;
+  context: keyof TemplatePayloadType;
+  payload: Record<string, any>
+}
+
+

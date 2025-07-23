@@ -1,14 +1,7 @@
 import { retry } from '../utils/retry.js';
-import { TemplatePayloadType } from './types.js';
+import { SendMailOptions } from './types.js';
 import { zeptomailer } from './utils.js';
 import { templateContexts } from './utils/context.temp.notification.js';
-
-interface SendMailOptions {
-  to: string | string[];
-  subject: string;
-  context: keyof TemplatePayloadType;
-  payload: Record<string, any>
-}
 
 // because I am not throwing error, I can call this function after response has been sent
 export const sendMail = async ({

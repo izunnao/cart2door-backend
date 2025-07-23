@@ -6,6 +6,7 @@ import { sendMail } from "../../notification/services.js";
 import { templatePayloads } from "../../notification/utils/payload.temp.notification.js";
 import { comparePasswords, hashPassword } from "./utils.js";
 import { generateOtp } from "../../utils/general.js";
+import { emailWorker } from "../../server.js";
 
 export const handleRegister = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -29,12 +30,21 @@ export const handleRegister = async (req: Request, res: Response, next: NextFunc
             isSuccess: true
         })
 
-        sendMail({
-            to: newUser.email,
-            payload: templatePayloads.registrationSuccess({ name: newUser.firstName, otp: regOtp }),
-            context: 'registrationSuccess',
-            subject: 'Registration Success',
+        emailWorker.postMessage({
+            for: 'email',
+            data: {
+                to: newUser.email,
+                payload: templatePayloads.registrationSuccess({ name: newUser.firstName, otp: regOtp }),
+                context: 'registrationSuccess',
+                subject: 'Registration Success',
+            }
         })
+        // queueEmailPayloads({
+        //     to: newUser.email,
+        //     payload: templatePayloads.registrationSuccess({ name: newUser.firstName, otp: regOtp }),
+        //     context: 'registrationSuccess',
+        //     subject: 'Registration Success',
+        // })
     } catch (error) {
         next(error)
     }
