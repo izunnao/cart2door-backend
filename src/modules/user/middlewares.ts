@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
 import { throwErrorOn } from '../../utils/AppError.js';
 import { getUserByEmail, getUserByOtpAndEmail } from './repositories.js';
+import { comparePasswords } from './utils.js';
 
 
 export const registerMiddleware = async (req: Request, res: Response, next: NextFunction) => {
@@ -35,6 +36,34 @@ export const registerMiddleware = async (req: Request, res: Response, next: Next
         const existingUser = await getUserByEmail(req.body.email)
 
         throwErrorOn(Boolean(existingUser), 409, 'User already exists with this email');
+
+        next();
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+export const changePasswordMiddleware = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const user = req.user!;
+
+        const registerSchema = Joi.object({
+            currentPassword: Joi.string().min(6).required(),
+            newPassword: Joi.string().min(6).required(),
+            confirmPassword: Joi.string().valid(Joi.ref('password')).required().messages({
+                'any.only': 'Passwords do not match',
+            }),
+        });
+
+        throwErrorOn(!req.body, 400, 'You need to pass a payload')
+
+        const { error } = registerSchema.validate(req.body);
+
+        throwErrorOn(Boolean(error), 400, error?.details?.[0].message || "")
+
+        const isMatch = comparePasswords(req.body.currentPassword, user.password);
+        throwErrorOn(!isMatch, 400, 'Current password is incorrect');
 
         next();
     } catch (error) {

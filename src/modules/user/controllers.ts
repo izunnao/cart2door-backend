@@ -158,3 +158,22 @@ export const handleLogin = async (req: Request, res: Response, next: NextFunctio
         next(error);
     }
 };
+
+
+
+
+export const handleChangePassword = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const user = req.user!;
+
+        const encryptedPassword = await hashPassword(req.body.newPassword)
+
+
+        await updateUser(user.id, {
+            password: encryptedPassword,
+        })
+
+    } catch (error) {
+        next(error)
+    }
+}
