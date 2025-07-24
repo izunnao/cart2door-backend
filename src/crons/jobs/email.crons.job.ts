@@ -31,9 +31,7 @@ export const sendQueuedEmails = async () => {
 
 export const getMailQueue = () => queue
 export const reloadEmailPayloadsFromDb = (payloads: SendMailOptions[]) => {
-
     const deepCopy = structuredClone(payloads);
-
     queue.push(...deepCopy)
 }
 

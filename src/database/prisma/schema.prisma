@@ -144,7 +144,7 @@ model ShippingDetail {
 
 model Job {
   id        String   @id @default(uuid())
-  type      String
+  type      String    @unique
   payload   Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
