@@ -1,15 +1,20 @@
+
+import './register.crons.js';
 import { parentPort } from 'worker_threads';
-import { queueEmailPayloads, startEmailJob } from "./jobs/email.crons.job.js";
+import { queueEmailPayloads } from "./jobs/email.crons.job.js";
 import { SendMailOptions } from '../notification/types.js';
+import { storeCronJobs } from './util.crons.js';
 
-export const registerAllCronJobs = () => {
-    startEmailJob();
-};
+parentPort?.on('message', async (message: { for: 'email' | 'save', data: SendMailOptions | any }) => {
 
-registerAllCronJobs();
+    console.log('Got message for >> ', message.for)
 
-parentPort?.on('message', (message: { for: 'email', data: SendMailOptions | any }) => {
     if (message.for === 'email') {
         queueEmailPayloads(message.data)
+    }
+
+    if (message.for === 'save'){
+        await storeCronJobs()
+        parentPort?.postMessage({ for: 'save:done' });
     }
 });

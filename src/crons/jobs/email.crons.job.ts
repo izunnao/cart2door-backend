@@ -29,6 +29,14 @@ export const sendQueuedEmails = async () => {
     }
 };
 
+export const getMailQueue = () => queue
+export const reloadEmailPayloadsFromDb = (payloads: SendMailOptions[]) => {
+
+    const deepCopy = structuredClone(payloads);
+
+    queue.push(...deepCopy)
+}
+
 export const startEmailJob = () => {
     // Run every minute
     cron.schedule('* * * * *', async () => {

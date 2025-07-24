@@ -8,9 +8,8 @@ import { extractOrderCreationShippingDetails } from "./helpers.js";
 import { getInternalPaymentStatus, verifyTransaction } from "../../utils/paystack.js";
 import { getRemainingAmount, validateMinimumOrder } from "../../utils/pricing.js";
 import { MINIMUM_ORDER_GBP } from "../../utils/constants.js";
-import { sendMail } from "../../notification/services.js";
-import { templateContexts } from "../../notification/utils/context.temp.notification.js";
 import { templatePayloads } from "../../notification/utils/payload.temp.notification.js";
+import cronsWorker from "../../crons/main.crons.js";
 
 export const handleAddOrder = async (req: Request, res: Response, next: NextFunction) => {
   const user = req.user!;
@@ -52,24 +51,27 @@ export const handleAddOrder = async (req: Request, res: Response, next: NextFunc
       message: 'Order created successfully'
     })
 
-    await sendMail({
-      to: user.email,
-      context: 'orderCreated',
-      payload: templatePayloads.orderCreated({
-        customerName: user.firstName,
-        items: orderItems.map(item => ({ name: item.productName, quantity: item.quantity, price: item.price })),
-        orderDate: order.createdAt.toISOString(),
-        orderId: order.id,
-        orderNumber: order.orderNumber,
-        orderTotal: order.total,
-        shippingAddress: {
-          city: order.city,
-          state: order.state,
-          street: order.street,
-        },
-        supportEmail: 'support@cart2door.ng'
-      }),
-      subject: 'Order Created'
+    cronsWorker.postMessage({
+      for: 'email',
+      data: {
+        to: user.email,
+        context: 'orderCreated',
+        payload: templatePayloads.orderCreated({
+          customerName: user.firstName,
+          items: orderItems.map(item => ({ name: item.productName, quantity: item.quantity, price: item.price })),
+          orderDate: order.createdAt.toISOString(),
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          orderTotal: order.total,
+          shippingAddress: {
+            city: order.city,
+            state: order.state,
+            street: order.street,
+          },
+          supportEmail: 'support@cart2door.ng'
+        }),
+        subject: 'Order Created'
+      }
     })
   } catch (err) {
     next(err)
@@ -185,19 +187,22 @@ export const handleUpdateOrderStatus = async (req: Request, res: Response, next:
       message: 'Order updated successfully'
     });
 
-    await sendMail({
-      to: updatedOrder.userEmail,
-      context: 'orderStatusUpdate',
-      payload: templatePayloads.orderStatusUpdate({
-        customerName: updatedOrder.fullName,
-        newStatus: updatedOrder.status,
-        orderDate: updatedOrder.createdAt.toISOString(),
-        orderId: updatedOrder.id,
-        orderTotal: updatedOrder.total,
-        supportEmail: 'support@cart2door.ng'
-      }),
-      subject: 'Order Status Update'
-    });
+    cronsWorker.postMessage({
+      for: 'email',
+      data: {
+        to: updatedOrder.userEmail,
+        context: 'orderStatusUpdate',
+        payload: templatePayloads.orderStatusUpdate({
+          customerName: updatedOrder.fullName,
+          newStatus: updatedOrder.status,
+          orderDate: updatedOrder.createdAt.toISOString(),
+          orderId: updatedOrder.id,
+          orderTotal: updatedOrder.total,
+          supportEmail: 'support@cart2door.ng'
+        }),
+        subject: 'Order Status Update'
+      }
+    })
   } catch (error) {
     next(error)
     console.error('Failed to update order status:', error);

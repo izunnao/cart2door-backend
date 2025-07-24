@@ -6,7 +6,7 @@ import { sendMail } from "../../notification/services.js";
 import { templatePayloads } from "../../notification/utils/payload.temp.notification.js";
 import { comparePasswords, hashPassword } from "./utils.js";
 import { generateOtp } from "../../utils/general.js";
-import { emailWorker } from "../../server.js";
+import cronsWorker from "../../crons/main.crons.js";
 
 export const handleRegister = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -30,7 +30,7 @@ export const handleRegister = async (req: Request, res: Response, next: NextFunc
             isSuccess: true
         })
 
-        emailWorker.postMessage({
+        cronsWorker.postMessage({
             for: 'email',
             data: {
                 to: newUser.email,
@@ -39,12 +39,6 @@ export const handleRegister = async (req: Request, res: Response, next: NextFunc
                 subject: 'Registration Success',
             }
         })
-        // queueEmailPayloads({
-        //     to: newUser.email,
-        //     payload: templatePayloads.registrationSuccess({ name: newUser.firstName, otp: regOtp }),
-        //     context: 'registrationSuccess',
-        //     subject: 'Registration Success',
-        // })
     } catch (error) {
         next(error)
     }
@@ -88,11 +82,14 @@ export const handleVerifyOtp = async (req: Request, res: Response, next: NextFun
             isSuccess: true,
         });
 
-        await sendMail({
-            to: user.email,
-            payload: templatePayloads.verifyOtpSucess({ firstName: user.firstName }),
-            context: 'verifyOtpSucess',
-            subject: 'OTP Verification Success',
+        cronsWorker.postMessage({
+            for: 'email',
+            data: {
+                to: user.email,
+                payload: templatePayloads.verifyOtpSucess({ firstName: user.firstName }),
+                context: 'verifyOtpSucess',
+                subject: 'OTP Verification Success',
+            }
         })
     } catch (error) {
         next(error)
@@ -129,11 +126,14 @@ export const handleLogin = async (req: Request, res: Response, next: NextFunctio
                 otpExpireAt: new Date(Date.now() + 10 * 60 * 1000), // 10 mins from now,
             })
 
-            await sendMail({
-                to: user.email,
-                context: 'otpVerification',
-                payload: templatePayloads.otpVerification({ firstName: user.firstName, otp: otp }),
-                subject: 'OTP Verification Code'
+            cronsWorker.postMessage({
+                for: 'email',
+                data: {
+                    to: user.email,
+                    context: 'otpVerification',
+                    payload: templatePayloads.otpVerification({ firstName: user.firstName, otp: otp }),
+                    subject: 'OTP Verification Code'
+                }
             })
 
             return throwErrorOn(true, 400, 'Email not verified, check mail for verification code');

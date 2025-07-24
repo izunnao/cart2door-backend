@@ -1,3 +1,4 @@
+import { CONFIG_ZEPTO_SMTP_HOST } from '../config.js';
 import { retry } from '../utils/retry.js';
 import { SendMailOptions } from './types.js';
 import { zeptomailer } from './utils.js';
@@ -24,9 +25,11 @@ export const sendMail = async ({
         to,
         subject,
         html: template,
-      }), 3, 1000
+      }), 2, 1000
     )
   } catch (error) {
     console.log(' Mailing error ', error)
+    console.log(' Mailing host', CONFIG_ZEPTO_SMTP_HOST)
+    throw error
   }
 };
