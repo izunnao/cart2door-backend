@@ -140,3 +140,12 @@ model ShippingDetail {
 
   user User @relation(fields: [userId], references: [id])
 }
+
+
+model Job {
+  id        String   @id @default(uuid())
+  type      String
+  payload   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
