@@ -1,7 +1,37 @@
-import { User } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 
 import { prisma } from "../../database/prisma_config.js"
-// import { UserI } from "../../types/user.types.js";
+import { PaginationI } from '../../types/general.types.js';
+import { calcResponsePagination } from '../../utils/general.js';
+
+
+interface GetUsersOptions {
+    where?: Prisma.UserWhereInput;
+    limit?: number;
+    page?: number;    // 0-indexed
+}
+
+export const getUsers = async ({ where = {}, limit = 10, page = 0 }: GetUsersOptions): Promise<{ users: User[], pagination: PaginationI } | undefined> => {
+    try {
+        const skip = (page) * limit
+        const users = await prisma.user.findMany({ where, take: limit, skip })
+
+        const totalUsers = await prisma.user.count({
+            where
+        });
+
+        if (users) {
+            return {
+                users,
+                pagination: calcResponsePagination(totalUsers, limit, page)
+            }
+        }
+
+        return undefined;
+    } catch (error) {
+        throw error
+    }
+}
 
 export const getUserByEmail = async (email: string): Promise<User | undefined> => {
     try {

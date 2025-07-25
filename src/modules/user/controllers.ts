@@ -1,12 +1,13 @@
 import { NextFunction, Request, Response } from "express"
-import { createUser, getUserByEmail, updateUser } from "./repositories.js"
+import { createUser, getUserByEmail, getUsers, updateUser } from "./repositories.js"
 import { throwErrorOn } from "../../utils/AppError.js";
 import { generateToken } from "../../utils/auth.js";
 import { sendMail } from "../../notification/services.js";
 import { templatePayloads } from "../../notification/utils/payload.temp.notification.js";
 import { comparePasswords, hashPassword } from "./utils.js";
-import { generateOtp } from "../../utils/general.js";
+import { calcPayloadPagination, generateOtp } from "../../utils/general.js";
 import cronsWorker from "../../crons/main.crons.js";
+import { Prisma } from "@prisma/client";
 
 export const handleRegister = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -180,6 +181,37 @@ export const handleChangePassword = async (req: Request, res: Response, next: Ne
         res.status(200).json({
             data: updatedUser,
             message: 'Password changed successfully',
+            isSuccess: true
+        })
+    } catch (error) {
+        next(error)
+    }
+}
+
+
+
+export const handleGetUsersForAdmin = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { name: nameSearch } = req.query;
+        const { limit, page } = calcPayloadPagination(req?.query?.limit as string, req?.query?.page as string)
+
+
+        const searchFilter = nameSearch
+            ? {
+                OR: [
+                    { firstName: { contains: nameSearch, mode: 'insensitive' } },
+                    { lastName: { contains: nameSearch, mode: 'insensitive' } },
+                ],
+            }
+            : {};
+
+        const response = await getUsers({ where: searchFilter as any, limit, page })
+
+
+        res.status(200).json({
+            data: response?.users,
+            pagination: response?.pagination,
+            message: 'Users fetched successfully',
             isSuccess: true
         })
     } catch (error) {
