@@ -69,7 +69,6 @@ model Order {
   createdAt      DateTime    @default(now())
   fullName       String      @default("n/a")
   phoneNumber    String      @default("n/a")
-  recipientEmail String      @default("n/a")
   street         String      @default("n/a")
   city           String      @default("n/a")
   state          String      @default("n/a")

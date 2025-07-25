@@ -107,10 +107,10 @@ export const createOrderPaymentWithItems = async (
 
     const { totalNGN, subtotalNGN, vat, customsDuty, deliveryFeeNGN, handlingFeeNGN } = calcOrderSummary(subTotalGBP, internalFXRate, shippingDetails.state);
 
-    const {email: recipientEmail, createdAt, updatedAt, ...otherShippingDetails} = shippingDetails;
+    const {createdAt, updatedAt, ...otherShippingDetails} = shippingDetails;
 
 
-    // console.log(shippingDetails);
+    console.log('this shipping info >> ', shippingDetails);
 
     const userLatestOrderNumber = user.lastOrderNumber + 1;
     // Step 1: Create order
@@ -128,7 +128,6 @@ export const createOrderPaymentWithItems = async (
         orderNumber: userLatestOrderNumber,
         vat: vat,
         status: 'pending',
-        recipientEmail,
         ...otherShippingDetails
       },
     });

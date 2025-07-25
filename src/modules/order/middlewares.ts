@@ -27,7 +27,6 @@ export const addOrdersMiddleware = async (req: Request, res: Response, next: Nex
         const shippingDetailsSchema = Joi.object({
             fullName: Joi.string().min(2).required(),
             phoneNumber: Joi.string().length(11).required(),
-            email: Joi.string().email().required(),
             street: Joi.string().min(3).required(),
             city: Joi.string().min(2).required(),
             state: Joi.string().valid('abuja', 'portharcourt', 'lagos').required()
@@ -140,7 +139,6 @@ export const addShippingMiddleware = (req: Request, res: Response, next: NextFun
         const schema = Joi.object({
             fullName: Joi.string().min(2).required(),
             phoneNumber: Joi.string().pattern(/^\d+$/).required(),
-            email: Joi.string().email().required(),
             street: Joi.string().required(),
             city: Joi.string().required(),
             state: Joi.string().required(),
