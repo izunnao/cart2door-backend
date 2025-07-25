@@ -130,7 +130,6 @@ model ShippingDetail {
   userId        String
   fullName      String
   phoneNumber   String
-  email         String
   street        String
   city          String
   state         String
