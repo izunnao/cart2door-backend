@@ -6,6 +6,7 @@ import { extractErrorMessage } from '../../utils/error.js';
 import { calcOrderSummary } from '../../utils/pricing.js';
 import { calcResponsePagination } from '../../utils/general.js';
 import { PaginationI } from '../../types/general.types.js';
+import { CONFIG_CLIENT_BASE_URL } from '../../config.js';
 
 
 export const getOrderById = async (
@@ -151,7 +152,7 @@ export const createOrderPaymentWithItems = async (
     console.log('totalPayable  :: ', totalNGN, '      total GBP :: ', subTotalGBP, '      internal fx rate :: ', internalFXRate)
 
 
-    const paymentInfo = await initializeTransaction(userEmail, totalNGN, 'http://localhost:8080/verify-payment', order.id) // order id is collected and used from metadata in transaction verification
+    const paymentInfo = await initializeTransaction(userEmail, totalNGN, `${CONFIG_CLIENT_BASE_URL}/verify-payment`, order.id) // order id is collected and used from metadata in transaction verification
 
     await tx.payment.create({
       data: {
