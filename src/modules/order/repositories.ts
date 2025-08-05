@@ -152,7 +152,7 @@ export const createOrderPaymentWithItems = async (
     console.log('totalPayable  :: ', totalNGN, '      total GBP :: ', subTotalGBP, '      internal fx rate :: ', internalFXRate)
 
 
-    const paymentInfo = await initializeTransaction(userEmail, totalNGN, `${CONFIG_CLIENT_BASE_URL}/verify-payment`, order.id) // order id is collected and used from metadata in transaction verification
+    const paymentInfo = await initializeTransaction(userEmail, totalNGN, `${CONFIG_CLIENT_BASE_URL}/verify-payment`, order.id) // order id is collected from metadata and used at transaction verification
 
     await tx.payment.create({
       data: {
