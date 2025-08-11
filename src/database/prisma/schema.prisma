@@ -42,6 +42,7 @@ model User {
   updatedAt       DateTime         @default(now())
   orders          Order[]
   payments        Payment[]
+  googleId        String
   shippingDetails ShippingDetail[]
   isEmailVerified Boolean          @default(false)
   otp             String?
