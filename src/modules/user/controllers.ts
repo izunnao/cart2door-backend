@@ -172,21 +172,41 @@ export const handleGoogleSignIn = async (req: Request, res: Response, next: Next
 
         const ticket = await verifyGoogleToken(credential);
 
+        console.log(ticket);
+
         const payload = ticket.getPayload();
         if (!payload || !payload.email) {
             return throwErrorOn(true, 401, 'Invalid Google token');
         }
 
-        const { email, name, sub: googleId, } = payload;
+        const { email, name, sub: googleId } = payload;
 
         let user = await getUserByEmail(email);
 
-
         if (!user) {
+            let firstName;
+            let lastName;
+            if (name && name.length > 0) {
+                [firstName, lastName] = name.split(' ')
+            }
+
             user = await createUser({
                 email,
-                firstName: name!,
+                firstName: firstName ?? "No name",
+                lastName: lastName ?? "",
                 googleId,
+                password: "",
+                isEmailVerified: true,
+                role: "customer",
+                phone: "",
+                address: "",
+                lastOrderNumber: 0,
+                otp: "",
+                createdAt: new Date(),
+                updatedAt: new Date(),
+
+                // not relevant in this context, just to satisfy type
+                otpExpireAt: new Date()
             });
         }
 

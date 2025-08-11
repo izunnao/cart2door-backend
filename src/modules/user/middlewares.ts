@@ -137,6 +137,9 @@ export const googleSignInMiddleware = (req: Request, res: Response, next: NextFu
 
         const { credential } = req.body; // frontend sends Google ID token
 
+        console.log(credential);
+
+
         if (!credential) {
             throwErrorOn(true, 400, 'Invalid google ID token');
         }
