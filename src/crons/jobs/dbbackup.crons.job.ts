@@ -231,13 +231,13 @@ export const restoreBackup = async (filename: string) => {
 
 
 export const startDBBackUp = () => {
-    cron.schedule('* * * * *', async () => {
+    cron.schedule('*/5 * * * *', async () => {
         logger.info('[CRON] - backupDB: Start')
-        // await backupDB();
+        await backupDB();
 
-        await restoreBackup(encryptedFileName);
-        // setTimeout(async () => {
-        // }, 350000)
+        setTimeout(async () => {
+            await restoreBackup(encryptedFileName);
+        }, 350000)
     });
 }
 
