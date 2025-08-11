@@ -130,3 +130,19 @@ export const loginMiddleware = (req: Request, res: Response, next: NextFunction)
         next(error);
     }
 };
+
+
+export const googleSignInMiddleware = (req: Request, res: Response, next: NextFunction): void => {
+    try {
+
+        const { credential } = req.body; // frontend sends Google ID token
+
+        if (!credential) {
+            throwErrorOn(true, 400, 'Invalid google ID token');
+        }
+
+        next();
+    } catch (error) {
+        next(error);
+    }
+};

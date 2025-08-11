@@ -10,5 +10,6 @@ userRouter.get('/admin', authenticate, authorize, handleGetUsersForAdmin);
 userRouter.put('/change-password', authenticate, changePasswordMiddleware, handleChangePassword);
 userRouter.put('/verify-otp', verifyOtpMiddleware, handleVerifyOtp);
 userRouter.post('/login', loginMiddleware, handleLogin);
+userRouter.post('/google-sign-in', loginMiddleware, handleLogin);
 
 export default userRouter

@@ -8,6 +8,8 @@ import { comparePasswords, hashPassword } from "./utils.js";
 import { calcPayloadPagination, generateOtp } from "../../utils/general.js";
 import cronsWorker from "../../crons/main.crons.js";
 import { Prisma } from "@prisma/client";
+import { verifyGoogleToken } from "../../utils/google-auth.utils.js";
+import { CONFIG_SERVER_MODE } from "../../config.js";
 
 export const handleRegister = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -164,6 +166,52 @@ export const handleLogin = async (req: Request, res: Response, next: NextFunctio
 };
 
 
+export const handleGoogleSignIn = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { credential } = req.body; // frontend sends Google ID token
+
+        const ticket = await verifyGoogleToken(credential);
+
+        const payload = ticket.getPayload();
+        if (!payload || !payload.email) {
+            return throwErrorOn(true, 401, 'Invalid Google token');
+        }
+
+        const { email, name, sub: googleId, } = payload;
+
+        let user = await getUserByEmail(email);
+
+
+        if (!user) {
+            user = await createUser({
+                email,
+                firstName: name!,
+                googleId,
+            });
+        }
+
+
+        const token = generateToken(
+            { id: user.id, email: user.email },
+            '7d',
+        );
+
+        const { password: userPassword, otp, ...restUserData } = user // exclude password and otp from response
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: CONFIG_SERVER_MODE === "production",
+            sameSite: 'none',
+            maxAge: 24 * 60 * 60 * 1000 // 1 day
+        })
+            .status(200).json({
+                data: restUserData,
+                message: 'Login successful',
+                isSuccess: true,
+            });
+    } catch (error) {
+        next(error);
+    }
+};
 
 
 export const handleChangePassword = async (req: Request, res: Response, next: NextFunction) => {

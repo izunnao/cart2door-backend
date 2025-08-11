@@ -30,3 +30,17 @@ export const CONFIG_ZEPTO_FROM_ADDRESS = process.env.ZEPTO_FROM_ADDRESS
 
 // CLIENT
 export const CONFIG_CLIENT_BASE_URL = process.env.CLIENT_BASE_URL
+
+
+// FTP
+export const CONFIG_FTP_HOST = process.env.FTP_HOST
+export const CONFIG_FTP_USER = process.env.FTP_USER
+export const CONFIG_FTP_PASSWORD = process.env.FTP_PASSWORD
+
+
+// DB
+export const CONFIG_DB_BACKUP_KEY = process.env.DB_BACKUP_KEY
+
+
+// GOOGLE
+export const CONFIG_GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
