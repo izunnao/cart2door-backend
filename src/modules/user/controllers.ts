@@ -219,7 +219,7 @@ export const handleGoogleSignIn = async (req: Request, res: Response, next: Next
         const { password: userPassword, otp, ...restUserData } = user // exclude password and otp from response
         res.cookie('token', token, {
             httpOnly: true,
-            secure: CONFIG_SERVER_MODE === "production",
+            secure: true,
             sameSite: 'none',
             maxAge: 24 * 60 * 60 * 1000 // 1 day
         })
