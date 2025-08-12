@@ -7,6 +7,7 @@ import { Client as FTPClient } from 'basic-ftp';
 import { CONFIG_DATABASE_URL, CONFIG_DB_BACKUP_KEY, CONFIG_FTP_HOST, CONFIG_FTP_PASSWORD, CONFIG_FTP_USER, CONFIG_SERVER_MODE } from '../../config.js';
 import { spawn, spawnSync } from 'child_process';
 import { pipeline } from 'stream/promises';
+import { prisma } from "../../database/prisma_config.js"
 
 
 type URL_TYPE = {
@@ -29,7 +30,7 @@ const encryptedFileName = 'db-backup.sql.enc';
 const ALGO = 'aes-256-cbc';
 const ENCRYPTION_KEY = crypto.createHash('sha256').update(String(CONFIG_DB_BACKUP_KEY)).digest(); // 32 bytes
 const IV_LENGTH = 16;
-const dbUrlObject: URL_TYPE = new URL(CONFIG_DATABASE_URL!) as unknown as URL_TYPE
+const dbCredentials: URL_TYPE = new URL(CONFIG_DATABASE_URL!) as unknown as URL_TYPE
 
 export const encryptFile = async (inputPath: string, outputPath: string) => {
     const iv = crypto.randomBytes(IV_LENGTH);
@@ -71,6 +72,35 @@ const decryptFile = async (encryptedPath: string, outputPath: string = 'someting
 }
 
 
+const isDatabaseEmpty = async (): Promise<boolean> => {
+    // Get all user tables in the 'public' schema
+    const tables: { tablename: string }[] = await prisma.$queryRaw`
+    SELECT tablename
+    FROM pg_tables
+    WHERE schemaname = 'public';
+  `;
+
+    if (tables.length === 0) {
+        // No tables at all
+        return true;
+    }
+
+    // Check each table's row count
+    for (const { tablename } of tables) {
+        const [{ count }] = await prisma.$queryRawUnsafe<{ count: string }[]>(
+            `SELECT COUNT(*)::text as count FROM "${tablename}"`
+        );
+
+        if (parseInt(count, 10) > 0) {
+            return false; // Found data
+        }
+    }
+
+    return true; // All tables have 0 rows
+}
+
+
+
 interface RestoreOptions {
     dbUrl: string; // e.g. process.env.DATABASE_URL
     dumpFile: string; // path to decrypted .sql file
@@ -85,11 +115,11 @@ const restoreDatabase = async ({ dbUrl, dumpFile }: RestoreOptions): Promise<voi
             return reject(new Error(`Dump file not found: ${absolutePath}`));
         }
 
-        console.log(' resotre db host >>>>  ', dbUrlObject.host)
+        console.log(' resotre db host >>>>  ', dbCredentials.host)
 
-        spawnSync("createdb", ["-h", dbUrlObject.host, "-U", dbUrlObject.username, "cart2door"], {
+        spawnSync("createdb", ["-h", dbCredentials.host, "-U", dbCredentials.username, "cart2door"], {
             stdio: "inherit",
-            env: { ...process.env, PGPASSWORD: dbUrlObject.password },
+            env: { ...process.env, PGPASSWORD: dbCredentials.password },
         });
 
         // Spawn psql process
@@ -120,12 +150,20 @@ const backupDB = async () => {
     const ftpclient = new FTPClient();
 
     try {
+        const isEmpty = await isDatabaseEmpty()
 
-        const user = dbUrlObject.username;
-        const password = dbUrlObject.password;
-        const host = dbUrlObject.hostname;
-        const port = dbUrlObject.port || '5432';
-        const dbName = dbUrlObject.pathname.slice(1); // remove leading slash
+        console.log('DB empty ??????  ', isEmpty)
+
+        if (isEmpty) { 
+            logger.info('[CRON] - backupDB: Canceled, DB empty')
+            return 
+        };
+
+        const user = dbCredentials.username;
+        const password = dbCredentials.password;
+        const host = dbCredentials.hostname;
+        const port = dbCredentials.port || '5432';
+        const dbName = dbCredentials.pathname.slice(1); // remove leading slash
 
 
         const dir = path.join(process.cwd(), 'backups'); // Safe folder inside project
@@ -134,6 +172,7 @@ const backupDB = async () => {
         const encryptedFilePath = path.join(dir, encryptedFileName)
 
 
+        // Dump DB, create backup file
         await new Promise<void>((resolve, reject) => {
             const dump = spawn('pg_dump', [
                 '-U', user,
@@ -235,9 +274,9 @@ export const startDBBackUp = () => {
         logger.info('[CRON] - backupDB: Start')
         await backupDB();
 
-        setTimeout(async () => {
-            await restoreBackup(encryptedFileName);
-        }, 350000)
+        // setTimeout(async () => {
+        //     await restoreBackup(encryptedFileName);
+        // }, 350000)
     });
 }
 
